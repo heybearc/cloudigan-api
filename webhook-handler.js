@@ -10,8 +10,12 @@ require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
+
+// Serve static files from public directory
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Datto RMM API Configuration
 const DATTO_CONFIG = {
