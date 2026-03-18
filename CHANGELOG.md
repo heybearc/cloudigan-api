@@ -9,19 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- M365 OAuth email integration (GREEN/STANDBY only)
-  - `m365-email.js` - M365 Graph API email sender
-  - `m365-oauth-mailer.js` - OAuth token management for M365
-  - Environment variables for M365 configuration
+---
+
+## [1.0.1] - 2026-03-18
+
+### Infrastructure
+- Migrated to dedicated repository: `heybearc/cloudigan-api`
+- Added control plane integration (`.cloudy-work` submodule)
+- Proper git repository structure on containers
+- Updated containers to use new repo structure
+- Added release management documentation (CHANGELOG, VERSION, RELEASE-PROCESS)
+- Added API testing guide (TESTING.md)
 
 ### Changed
-- GREEN (CT182) now uses M365 OAuth for email delivery
-- BLUE (CT181) continues using SendGrid for email delivery
+- Repository location: `~/Projects/cloudigan-api/` (peer to other repos)
+- Container path remains: `/opt/cloudigan-api/` (now proper git repo)
+- Follows control plane "one repo = one app" standard
 
 ### Notes
-- M365 integration pending testing and release
-- Both email providers functional on respective nodes
+- No code changes - infrastructure reorganization only
+- Both containers (CT181/CT182) updated and verified
+- M365 integration still on STANDBY, pending release
 
 ---
 
