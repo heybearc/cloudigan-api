@@ -32,9 +32,10 @@ async function insertCustomerDownload(data) {
 
   try {
     const response = await axios.post(
-      `https://www.wixapis.com/wix-data/v2/collections/${WIX_CONFIG.collectionId}/items`,
+      `https://www.wixapis.com/wix-data/v2/items`,
       {
-        item: {
+        dataCollectionId: WIX_CONFIG.collectionId,
+        dataItem: {
           data: item
         }
       },

@@ -113,11 +113,11 @@ If you have any questions or need assistance, please contact our support team.
   `;
 
   try {
-    await m365Mailer.sendEmail({
+    await m365Mailer.sendMail({
       to: data.customerEmail,
       subject: 'Welcome to Cloudigan - Download Your RMM Agent',
-      body: htmlContent,
-      bodyType: 'html'
+      html: htmlContent,
+      text: textContent
     });
     
     console.log('Welcome email sent to:', data.customerEmail);
