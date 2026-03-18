@@ -253,7 +253,9 @@ app.post('/webhook/stripe',
           requestLogger.info('Download links generated', {
             siteUid: dattoSite.uid,
             siteId: dattoSite.id,
-            portalUrl: downloadLinks.portal
+            windows: downloadLinks.windows,
+            mac: downloadLinks.mac,
+            linux: downloadLinks.linux
           });
 
           // Insert into Wix CMS (if configured)

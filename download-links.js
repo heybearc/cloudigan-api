@@ -7,21 +7,19 @@
  * Generate download links for all platforms
  * @param {string} siteId - Datto site ID (numeric)
  * @param {string} siteUid - Datto site UID
- * @returns {object} Download links (single portal URL for all platforms)
+ * @returns {object} Download links for Windows, macOS, and Linux
  */
 function generateDownloadLinks(siteId, siteUid) {
   // Extract platform from DATTO_API_URL
   // e.g., https://vidal-api.centrastage.net -> vidal
   const platform = process.env.DATTO_API_URL.match(/https:\/\/(\w+)-api/)[1];
   
-  // Datto portal URL - customers download agents for all platforms from this single URL
-  const portalUrl = `https://${platform}.rmm.datto.com/site/${siteId}`;
+  const baseUrl = `https://${platform}.rmm.datto.com/download-agent`;
   
   return {
-    portal: portalUrl,
-    windows: portalUrl,
-    mac: portalUrl,
-    linux: portalUrl,
+    windows: `${baseUrl}/windows/${siteUid}`,
+    mac: `${baseUrl}/mac/${siteUid}`,
+    linux: `${baseUrl}/linux/${siteUid}`,
     siteUid: siteUid
   };
 }
