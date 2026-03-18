@@ -248,11 +248,12 @@ app.post('/webhook/stripe',
           });
 
           // Generate all platform download links
-          const downloadLinks = generateDownloadLinks(dattoSite.uid);
+          const downloadLinks = generateDownloadLinks(dattoSite.id, dattoSite.uid);
           
           requestLogger.info('Download links generated', {
             siteUid: dattoSite.uid,
-            platforms: Object.keys(downloadLinks)
+            siteId: dattoSite.id,
+            portalUrl: downloadLinks.portal
           });
 
           // Insert into Wix CMS (if configured)
