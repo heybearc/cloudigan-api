@@ -31,11 +31,11 @@ function getBusinessEmailTemplate(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7f9; padding: 20px 0;">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; width: 100% !important; min-width: 100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f7f9; padding: 20px 0; margin: 0;">
     <tr>
-      <td align="center">
-        <table width="600" style="width: 600px; max-width: 600px;" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <td align="center" style="padding: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           
           <!-- Header -->
           <tr>
@@ -186,11 +186,11 @@ function getHomeProtectEmailTemplate(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7f9; padding: 20px 0;">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; width: 100% !important; min-width: 100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f7f9; padding: 20px 0; margin: 0;">
     <tr>
-      <td align="center">
-        <table width="600" style="width: 600px; max-width: 600px;" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <td align="center" style="padding: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           
           <!-- Header -->
           <tr>
