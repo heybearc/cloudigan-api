@@ -1,0 +1,7 @@
+node_modules/
+.env
+.datto-token.json
+*.log
+.DS_Store
+.vscode/
+.idea/
