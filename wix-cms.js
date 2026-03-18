@@ -51,8 +51,10 @@ async function insertCustomerDownload(data) {
     console.log('Wix CMS item created:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Wix CMS insert failed:', error.response?.data || error.message);
-    throw new Error(`Failed to insert into Wix CMS: ${error.message}`);
+    const errorDetails = error.response?.data || error.message;
+    console.error('Wix CMS insert failed:', JSON.stringify(errorDetails, null, 2));
+    console.error('Request payload:', JSON.stringify({ dataCollectionId: WIX_CONFIG.collectionId, dataItem: { data: item } }, null, 2));
+    throw new Error(`Failed to insert into Wix CMS: ${JSON.stringify(errorDetails)}`);
   }
 }
 
