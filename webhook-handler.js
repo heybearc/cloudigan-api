@@ -5,6 +5,8 @@
  * creates a site in Datto RMM, and returns the agent download link.
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const axios = require('axios');
