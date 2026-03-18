@@ -12,19 +12,19 @@ const DATTO_CONFIG = {
 };
 
 /**
- * Generate JWT token for Datto API authentication
- * Token format: base64(apiKey + ":" + apiSecretKey)
+ * Generate authentication header for Datto API
+ * Uses API key and secret key directly (not base64 encoded)
  */
-function generateJwtToken() {
-  const credentials = `${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`;
-  return Buffer.from(credentials).toString('base64');
+function generateAuthHeader() {
+  // Datto uses the API key and secret key directly in the format shown in docs
+  return `${DATTO_CONFIG.apiKey} ${DATTO_CONFIG.apiSecretKey}`;
 }
 
 /**
  * Make authenticated API request to Datto RMM
  */
 async function makeAuthenticatedRequest(endpoint, options = {}) {
-  const token = generateJwtToken();
+  const authHeader = generateAuthHeader();
   
   const url = `${DATTO_CONFIG.apiUrl}${endpoint}`;
   
@@ -32,7 +32,7 @@ async function makeAuthenticatedRequest(endpoint, options = {}) {
     ...options,
     headers: {
       ...options.headers,
-      'Authorization': `Bearer ${token}`,
+      'Authorization': authHeader,
       'Content-Type': 'application/json',
     },
   });
@@ -68,7 +68,7 @@ async function testAuth() {
 
 module.exports = {
   makeAuthenticatedRequest,
-  generateJwtToken,
+  generateAuthHeader,
   testAuth,
 };
 
