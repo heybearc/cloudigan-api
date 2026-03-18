@@ -228,7 +228,21 @@ app.post('/webhook/stripe',
           // Extract customer data from Stripe session
           // For business products: use custom_fields company name
           // For personal products: use customer_details.name
-          const companyNameField = session.custom_fields?.find(f => f.key === 'company_name');
+          
+          // Log custom fields for debugging
+          requestLogger.info('Stripe session custom_fields', { 
+            custom_fields: session.custom_fields,
+            metadata: session.metadata 
+          });
+          
+          // Try multiple possible field keys
+          const companyNameField = session.custom_fields?.find(f => 
+            f.key === 'company_name' || 
+            f.key === 'companyname' || 
+            f.key === 'Company Name' ||
+            f.label?.toLowerCase().includes('company name')
+          );
+          
           const companyName = companyNameField?.text?.value || session.metadata?.company_name;
           const customerName = session.customer_details.name;
           
@@ -247,7 +261,8 @@ app.post('/webhook/stripe',
             email: customerData.email,
             customerId: customerData.customerId,
             displayName: customerData.displayName,
-            isBusinessProduct: customerData.isBusinessProduct
+            isBusinessProduct: customerData.isBusinessProduct,
+            companyName: customerData.companyName
           });
 
           // Create site in Datto RMM
