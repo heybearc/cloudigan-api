@@ -173,7 +173,17 @@ module.exports = {
 if (require.main === module) {
   (async () => {
     try {
-      const token = await getToken();
+      // Try to get existing token first
+      let token;
+      try {
+        token = await getToken();
+        console.log('\n✅ Using existing token');
+      } catch (error) {
+        // No token exists or expired, generate new one
+        console.log('\n🔄 Generating new token...');
+        const tokenInfo = await getNewToken();
+        token = tokenInfo.access_token;
+      }
       console.log('\n🎉 Token ready for use!');
       console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
     } catch (error) {
