@@ -229,22 +229,18 @@ app.post('/webhook/stripe',
           // For business products: use custom_fields company name
           // For personal products: use customer_details.name
           
-          // Log custom fields for debugging
-          requestLogger.info('Stripe session custom_fields', { 
-            custom_fields: session.custom_fields,
-            metadata: session.metadata 
-          });
-          
-          // Try multiple possible field keys
-          const companyNameField = session.custom_fields?.find(f => 
-            f.key === 'company_name' || 
-            f.key === 'companyname' || 
-            f.key === 'Company Name' ||
-            f.label?.toLowerCase().includes('company name')
-          );
-          
+          // Extract company name from Stripe custom fields
+          // Field key is 'companyname' (lowercase, no underscore)
+          const companyNameField = session.custom_fields?.find(f => f.key === 'companyname');
           const companyName = companyNameField?.text?.value || session.metadata?.company_name;
           const customerName = session.customer_details.name;
+          
+          // Log extracted data for debugging
+          requestLogger.info('Extracted customer data', { 
+            companyName,
+            customerName,
+            hasCompanyName: !!companyName
+          });
           
           const customerData = {
             email: session.customer_details.email,
