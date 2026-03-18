@@ -24,6 +24,8 @@ async function insertCustomerDownload(data) {
     dattoSiteUid: data.siteUid,
     customerEmail: data.customerEmail,
     customerName: data.customerName || data.customerEmail,
+    companyName: data.companyName || '', // Business name for business products, empty for personal
+    isBusinessProduct: data.isBusinessProduct || false,
     windowsDownloadLink: data.downloadLinks.windows,
     macOsDownloadLink: data.downloadLinks.mac,
     linuxDownloadLink: data.downloadLinks.linux,

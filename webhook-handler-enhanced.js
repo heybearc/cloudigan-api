@@ -61,9 +61,9 @@ async function createDattoSite(customerData, requestLogger) {
             return await dattoAuth.makeAuthenticatedRequest('/api/v2/site', {
               method: 'PUT',
               body: JSON.stringify({
-                name: customerData.companyName || customerData.email,
-                description: `Customer: ${customerData.email}`,
-                notes: `Created via Stripe integration on ${new Date().toISOString()}`,
+                name: customerData.displayName || customerData.email,
+                description: `Customer: ${customerData.email}${customerData.isBusinessProduct ? ` | Business: ${customerData.companyName}` : ''}`,
+                notes: `Created via Stripe integration on ${new Date().toISOString()}${customerData.isBusinessProduct ? '\nBusiness Product' : '\nPersonal Product'}`,
               }),
             });
           },
@@ -226,17 +226,28 @@ app.post('/webhook/stripe',
       try {
         await trackAsyncOperation('webhook_processing', async () => {
           // Extract customer data from Stripe session
+          // For business products: use custom_fields company name
+          // For personal products: use customer_details.name
+          const companyNameField = session.custom_fields?.find(f => f.key === 'company_name');
+          const companyName = companyNameField?.text?.value || session.metadata?.company_name;
+          const customerName = session.customer_details.name;
+          
           const customerData = {
             email: session.customer_details.email,
-            companyName: session.customer_details.name || session.metadata?.company_name,
+            companyName: companyName,
+            customerName: customerName,
+            displayName: companyName || customerName, // Use company name if available, otherwise customer name
             subscriptionId: session.subscription,
             customerId: session.customer,
             productId: session.metadata?.product_id,
+            isBusinessProduct: !!companyName, // Flag to identify business vs personal
           };
 
           requestLogger.info('Processing subscription', {
             email: customerData.email,
-            customerId: customerData.customerId
+            customerId: customerData.customerId,
+            displayName: customerData.displayName,
+            isBusinessProduct: customerData.isBusinessProduct
           });
 
           // Create site in Datto RMM
@@ -265,7 +276,9 @@ app.post('/webhook/stripe',
                 sessionId: session.id,
                 siteUid: dattoSite.uid,
                 customerEmail: customerData.email,
-                customerName: customerData.companyName || customerData.email,
+                customerName: customerData.displayName || customerData.email,
+                companyName: customerData.companyName,
+                isBusinessProduct: customerData.isBusinessProduct,
                 downloadLinks
               });
               requestLogger.info('Wix CMS item created', { sessionId: session.id });
@@ -281,7 +294,9 @@ app.post('/webhook/stripe',
             try {
               await sendWelcomeEmail({
                 customerEmail: customerData.email,
-                customerName: customerData.companyName || customerData.email,
+                customerName: customerData.customerName,
+                companyName: customerData.companyName,
+                isBusinessProduct: customerData.isBusinessProduct,
                 downloadLinks,
                 siteUid: dattoSite.uid
               });

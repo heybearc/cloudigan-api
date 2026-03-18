@@ -54,8 +54,9 @@ async function sendWelcomeEmail(data) {
           <h1>Welcome to Cloudigan!</h1>
         </div>
         <div class="content">
-          <h2>Hello ${data.customerName},</h2>
+          <h2>Hello${data.companyName ? ` ${data.companyName}` : ` ${data.customerName}`},</h2>
           <p>Thank you for subscribing to Cloudigan's RMM services!</p>
+          ${data.companyName ? `<p><strong>Business:</strong> ${data.companyName}</p>` : ''}
           <p>Your Datto RMM site has been created successfully. Download the agent for your platform:</p>
           
           <div style="text-align: center; margin: 30px 0;">
