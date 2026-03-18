@@ -113,7 +113,8 @@ async function getNewToken() {
 }
 
 /**
- * Get current valid token (from cache or fetch new)
+ * Get valid OAuth token (from cache only - no auto-refresh)
+ * Token must be refreshed manually outside of webhook processing
  */
 async function getToken() {
   try {
@@ -130,14 +131,14 @@ async function getToken() {
       return tokenInfo.access_token;
     }
     
-    console.log('⚠️  Token expired or expiring soon, refreshing...');
+    // Token expired - fail fast, don't refresh during webhook processing
+    throw new Error(`Datto OAuth token expired (${Math.round(hoursRemaining)} hours remaining). Run 'node datto-auth.js' to refresh manually.`);
   } catch (error) {
-    console.log('ℹ️  No cached token found');
+    if (error.code === 'ENOENT') {
+      throw new Error('No Datto OAuth token found. Run \'node datto-auth.js\' to generate a token.');
+    }
+    throw error;
   }
-  
-  // Get new token
-  const tokenInfo = await getNewToken();
-  return tokenInfo.access_token;
 }
 
 /**
