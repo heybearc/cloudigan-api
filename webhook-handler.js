@@ -20,8 +20,8 @@ const DATTO_CONFIG = {
   apiSecretKey: process.env.DATTO_API_SECRET_KEY,
 };
 
-// Datto RMM API Integration - JWT-based authentication
-const dattoAuth = require('./datto-auth-jwt');
+// Datto RMM API Integration - Using OAuth token
+const dattoAuth = require('./datto-auth');
 
 /**
  * Create a new site in Datto RMM
