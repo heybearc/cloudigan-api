@@ -11,6 +11,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-03-18
+
+### Added
+- **M365 OAuth Email Integration** - Microsoft 365 email sending capability
+  - `m365-oauth-mailer.js` - M365 Graph API email sender with OAuth 2.0
+  - OAuth client credentials flow for authentication
+  - Automatic token caching and refresh
+  - HTML email support via Microsoft Graph API
+  - Tested and verified on STANDBY (GREEN/CT182)
+
+### Changed
+- Email provider options: SendGrid (BLUE) or M365 OAuth (GREEN)
+- Environment variables added for M365 configuration:
+  - `M365_CLIENT_ID` - Azure AD app client ID
+  - `M365_CLIENT_SECRET` - Azure AD app client secret
+  - `M365_TENANT_ID` - Azure AD tenant ID
+  - `M365_FROM_EMAIL` - Email address to send from
+
+### Testing
+- ✅ M365 OAuth authentication verified
+- ✅ Email sending tested successfully
+- ✅ Message ID: `81137823-6618-492d-b81b-fe633081dd36`
+- ✅ Test email delivered to cory@cloudigan.com
+
+### Notes
+- Requires Azure AD app registration with `Mail.Send` API permission
+- Admin consent required for application permission
+- Ready for production deployment
+
+---
+
 ## [1.0.1] - 2026-03-18
 
 ### Infrastructure
