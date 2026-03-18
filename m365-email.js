@@ -35,138 +35,246 @@ function getBusinessEmailTemplate(data) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
         body { 
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6; 
-          color: #333;
+          line-height: 1.7; 
+          color: #2c3e50;
           margin: 0;
           padding: 0;
+          background-color: #f4f7f9;
         }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .email-wrapper {
+          background-color: #f4f7f9;
+          padding: 40px 20px;
+        }
+        .container { 
+          max-width: 600px; 
+          margin: 0 auto; 
+          background: #ffffff;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
         .header { 
-          background: linear-gradient(135deg, #0066cc 0%, #004999 100%);
+          background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
           color: white; 
-          padding: 30px 20px; 
+          padding: 40px 30px; 
           text-align: center;
         }
-        .logo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .tagline { font-size: 14px; font-style: italic; opacity: 0.9; }
-        .content { padding: 30px 20px; }
+        .logo { 
+          font-size: 32px; 
+          font-weight: 700; 
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+        }
+        .tagline { 
+          font-size: 15px; 
+          font-style: italic; 
+          opacity: 0.95;
+          font-weight: 300;
+        }
+        .content { 
+          padding: 40px 30px;
+          background: #ffffff;
+        }
+        .greeting {
+          font-size: 18px;
+          color: #1e3a8a;
+          margin-bottom: 20px;
+        }
         .section-title { 
-          font-size: 18px; 
-          font-weight: bold; 
-          color: #0066cc; 
-          margin-top: 25px;
+          font-size: 20px; 
+          font-weight: 700; 
+          color: #1e3a8a; 
+          margin-top: 35px;
           margin-bottom: 15px;
+          border-bottom: 2px solid #3b82f6;
+          padding-bottom: 8px;
         }
         .download-section {
-          background: #f5f8fa;
-          padding: 20px;
-          border-radius: 8px;
-          margin: 20px 0;
+          background: linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%);
+          padding: 25px;
+          border-radius: 10px;
+          margin: 25px 0;
+          border: 1px solid #cbd5e1;
+        }
+        .download-item {
+          margin: 15px 0;
+        }
+        .download-label {
+          font-weight: 600;
+          color: #475569;
+          display: block;
+          margin-bottom: 8px;
+          font-size: 14px;
         }
         .download-link {
           display: block;
-          margin: 10px 0;
-          padding: 12px 20px;
-          background: #0066cc;
-          color: white;
+          padding: 14px 24px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white !important;
           text-decoration: none;
-          border-radius: 5px;
+          border-radius: 8px;
           text-align: center;
-          font-weight: bold;
+          font-weight: 600;
+          font-size: 15px;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
-        .download-link:hover { background: #0052a3; }
-        .tips { 
-          background: #fff9e6;
-          border-left: 4px solid #ffc107;
-          padding: 15px;
-          margin: 20px 0;
+        .download-link:hover { 
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+          transform: translateY(-1px);
         }
-        .tips ul { margin: 10px 0; padding-left: 20px; }
+        .tips-box { 
+          background: #fef3c7;
+          border-left: 5px solid #f59e0b;
+          padding: 20px 25px;
+          margin: 25px 0;
+          border-radius: 0 8px 8px 0;
+        }
+        .tips-box strong {
+          color: #92400e;
+          font-size: 16px;
+          display: block;
+          margin-bottom: 12px;
+        }
+        .tips-box ul { 
+          margin: 10px 0; 
+          padding-left: 20px;
+          color: #78350f;
+        }
+        .tips-box li {
+          margin: 8px 0;
+        }
+        .info-box {
+          background: #f0f9ff;
+          border-left: 5px solid #0ea5e9;
+          padding: 20px 25px;
+          margin: 25px 0;
+          border-radius: 0 8px 8px 0;
+        }
         .footer { 
-          background: #f5f5f5;
-          padding: 20px; 
+          background: #1e293b;
+          color: #cbd5e1;
+          padding: 30px; 
           text-align: center; 
-          font-size: 12px; 
-          color: #666;
-          border-top: 1px solid #ddd;
+          font-size: 13px;
         }
-        .signature { margin-top: 30px; font-style: italic; }
+        .footer a {
+          color: #60a5fa;
+          text-decoration: none;
+        }
+        .signature { 
+          margin-top: 40px;
+          padding-top: 25px;
+          border-top: 2px solid #e2e8f0;
+        }
+        .signature-name {
+          font-weight: 700;
+          color: #1e3a8a;
+          font-size: 16px;
+        }
+        .signature-title {
+          color: #64748b;
+          font-size: 14px;
+          margin-top: 4px;
+        }
+        .signature-tagline {
+          color: #3b82f6;
+          font-style: italic;
+          font-size: 14px;
+          margin-top: 8px;
+        }
+        a { color: #3b82f6; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">CLOUDIGAN</div>
-          <div class="tagline">We do IT so you don't have to.</div>
-        </div>
-        
-        <div class="content">
-          <p>Hi ${firstName},</p>
+      <div class="email-wrapper">
+        <div class="container">
+          <div class="header">
+            <div class="logo">CLOUDIGAN</div>
+            <div class="tagline">We do IT so you don't have to.</div>
+          </div>
           
-          <p>First off, thank you for trusting us with your IT. We are really happy to have <strong>${data.companyName}</strong> as part of the Cloudigan Family.</p>
-          
-          <p>We've got everything on our end moving already, and we're excited to get you fully set up and covered.</p>
-          
-          <div class="section-title">Let's get your devices connected</div>
-          
-          <p>You'll want to install the agent on <strong>each of the devices included in your plan</strong>.</p>
-          
-          <p>Each device you're covering should have the software installed so we can begin monitoring and protecting it.</p>
-          
-          <p>If you haven't downloaded the installer yet, you can do so here:</p>
-          
-          <div class="download-section">
-            <strong>Windows Download:</strong><br>
-            <a href="${data.downloadLinks.windows}" class="download-link">Download for Windows</a>
+          <div class="content">
+            <div class="greeting">Hi ${firstName},</div>
             
-            <strong>Mac Download:</strong><br>
-            <a href="${data.downloadLinks.mac}" class="download-link">Download for Mac</a>
+            <p>First off, thank you for trusting us with your IT. We are really happy to have <strong>${data.companyName}</strong> as part of the Cloudigan Family.</p>
             
-            <strong>Linux Download:</strong><br>
-            <a href="${data.downloadLinks.linux}" class="download-link">Download for Linux</a>
+            <p>We've got everything on our end moving already, and we're excited to get you fully set up and covered.</p>
+            
+            <div class="section-title">Let's get your devices connected</div>
+            
+            <p>You'll want to install the agent on <strong>each of the devices included in your plan</strong>.</p>
+            
+            <p>Each device you're covering should have the software installed so we can begin monitoring and protecting it.</p>
+            
+            <p>If you haven't downloaded the installer yet, you can do so here:</p>
+            
+            <div class="download-section">
+              <div class="download-item">
+                <span class="download-label">Windows Download:</span>
+                <a href="${data.downloadLinks.windows}" class="download-link">Download for Windows</a>
+              </div>
+              
+              <div class="download-item">
+                <span class="download-label">Mac Download:</span>
+                <a href="${data.downloadLinks.mac}" class="download-link">Download for Mac</a>
+              </div>
+              
+              <div class="download-item">
+                <span class="download-label">Linux Download:</span>
+                <a href="${data.downloadLinks.linux}" class="download-link">Download for Linux</a>
+              </div>
+            </div>
+            
+            <p>Once it is downloaded, click on the file and install will happen automatically.</p>
+            
+            <p>You can forward these links to your team or install them directly on each device—it's totally fine either way.</p>
+            
+            <div class="tips-box">
+              <strong>A couple quick tips</strong>
+              <ul>
+                <li>Make sure the software is installed on the correct number of devices included in your plan</li>
+                <li>If you're unsure which devices to prioritize, no problem—we'll go through that together</li>
+                <li>Installation only takes a few seconds per device</li>
+              </ul>
+            </div>
+            
+            <div class="section-title">Need to adjust your device count?</div>
+            
+            <p>If you need to add or remove devices, you can manage your subscription in your Stripe customer portal.</p>
+            
+            <p>Or just let us know—we're happy to help you make the right adjustments.</p>
+            
+            <div class="section-title">What happens next</div>
+            
+            <div class="info-box">
+              <p style="margin: 0;"><strong>Your Cloudigan Rep will be reaching out within 24 hours</strong> to give you the official welcome. We'll walk through everything together and make sure your setup fits your business the way it should.</p>
+            </div>
+            
+            <p>Once your devices are installed, we'll take it from there—monitoring, updates, protection, all of it.</p>
+            
+            <p>If anything comes up in the meantime, send an email to <a href="mailto:hello@cloudigan.com">hello@cloudigan.com</a></p>
+            
+            <div class="signature">
+              <p style="margin: 0;">Looking forward to working with you,</p>
+              <p class="signature-name" style="margin: 12px 0 0 0;">Cory Allen</p>
+              <p class="signature-title" style="margin: 4px 0 0 0;">Cloudigan IT Solutions</p>
+              <p class="signature-tagline" style="margin: 8px 0 0 0;">We do IT so you don't have to.</p>
+            </div>
           </div>
           
-          <p>Once it is downloaded, click on the file and install will happen automatically.</p>
-          
-          <p>You can forward these links to your team or install them directly on each device—it's totally fine either way.</p>
-          
-          <div class="tips">
-            <strong>A couple quick tips</strong>
-            <ul>
-              <li>Make sure the software is installed on the correct number of devices included in your plan</li>
-              <li>If you're unsure which devices to prioritize, no problem—we'll go through that together</li>
-              <li>Installation only takes a few seconds per device</li>
-            </ul>
+          <div class="footer">
+            <p style="margin: 0 0 10px 0;">&copy; ${new Date().getFullYear()} Cloudigan IT Solutions. All rights reserved.</p>
+            <p style="margin: 0;">This email was sent to ${data.customerEmail}</p>
+            <p style="margin: 15px 0 0 0;"><a href="https://www.cloudigan.com">www.cloudigan.com</a></p>
           </div>
-          
-          <div class="section-title">Need to adjust your device count?</div>
-          
-          <p>If you need to add or remove devices, you can manage your subscription in your Stripe customer portal.</p>
-          
-          <p>Or just let us know—we're happy to help you make the right adjustments.</p>
-          
-          <div class="section-title">What happens next</div>
-          
-          <p>Your Cloudigan Rep will be reaching out within 24 hours to give you the official welcome. We'll walk through everything together and make sure your setup fits your business the way it should.</p>
-          
-          <p>Once your devices are installed, we'll take it from there—monitoring, updates, protection, all of it.</p>
-          
-          <p>If anything comes up in the meantime, send an email to <a href="mailto:hello@cloudigan.com">hello@cloudigan.com</a></p>
-          
-          <div class="signature">
-            <p>Looking forward to working with you,</p>
-            <p><strong>Cory Allen</strong><br>
-            Cloudigan IT Solutions<br>
-            <em>We do IT so you don't have to.</em></p>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Cloudigan IT Solutions. All rights reserved.</p>
-          <p>This email was sent to ${data.customerEmail}</p>
         </div>
       </div>
     </body>
@@ -184,155 +292,274 @@ function getHomeProtectEmailTemplate(data) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
         body { 
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6; 
-          color: #333;
+          line-height: 1.7; 
+          color: #2c3e50;
           margin: 0;
           padding: 0;
+          background-color: #f4f7f9;
         }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .email-wrapper {
+          background-color: #f4f7f9;
+          padding: 40px 20px;
+        }
+        .container { 
+          max-width: 600px; 
+          margin: 0 auto; 
+          background: #ffffff;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
         .header { 
-          background: linear-gradient(135deg, #0066cc 0%, #004999 100%);
+          background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
           color: white; 
-          padding: 30px 20px; 
+          padding: 40px 30px; 
           text-align: center;
         }
-        .logo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .tagline { font-size: 14px; font-style: italic; opacity: 0.9; }
-        .content { padding: 30px 20px; }
+        .logo { 
+          font-size: 32px; 
+          font-weight: 700; 
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+        }
+        .tagline { 
+          font-size: 15px; 
+          font-style: italic; 
+          opacity: 0.95;
+          font-weight: 300;
+        }
+        .content { 
+          padding: 40px 30px;
+          background: #ffffff;
+        }
+        .greeting {
+          font-size: 18px;
+          color: #1e3a8a;
+          margin-bottom: 20px;
+        }
         .section-title { 
-          font-size: 18px; 
-          font-weight: bold; 
-          color: #0066cc; 
-          margin-top: 25px;
-          margin-bottom: 15px;
+          font-size: 20px; 
+          font-weight: 700; 
+          color: #1e3a8a; 
+          margin-top: 35px;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #3b82f6;
+          padding-bottom: 8px;
         }
-        .step-number {
-          display: inline-block;
-          width: 30px;
-          height: 30px;
-          background: #0066cc;
-          color: white;
-          border-radius: 50%;
-          text-align: center;
-          line-height: 30px;
-          font-weight: bold;
-          margin-right: 10px;
+        .step-container {
+          margin: 30px 0;
         }
         .step {
-          margin: 20px 0;
-          padding-left: 40px;
+          display: flex;
+          margin: 25px 0;
+          align-items: flex-start;
+        }
+        .step-number {
+          flex-shrink: 0;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 18px;
+          margin-right: 20px;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        .step-content {
+          flex: 1;
+        }
+        .step-title {
+          font-weight: 700;
+          font-size: 17px;
+          color: #1e3a8a;
+          margin-bottom: 10px;
         }
         .download-section {
-          background: #f5f8fa;
+          background: linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%);
           padding: 20px;
-          border-radius: 8px;
+          border-radius: 10px;
           margin: 15px 0;
+          border: 1px solid #cbd5e1;
         }
         .download-link {
           display: block;
-          margin: 10px 0;
-          padding: 12px 20px;
-          background: #0066cc;
-          color: white;
+          margin: 12px 0;
+          padding: 14px 24px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white !important;
           text-decoration: none;
-          border-radius: 5px;
+          border-radius: 8px;
           text-align: center;
-          font-weight: bold;
+          font-weight: 600;
+          font-size: 15px;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
-        .download-link:hover { background: #0052a3; }
-        .benefits {
-          background: #e8f5e9;
-          border-left: 4px solid #4caf50;
-          padding: 15px;
-          margin: 20px 0;
+        .download-link:hover { 
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+          transform: translateY(-1px);
         }
-        .benefits ul { margin: 10px 0; padding-left: 20px; }
-        .reminder {
-          background: #fff9e6;
-          border-left: 4px solid #ffc107;
-          padding: 15px;
+        .benefits-box {
+          background: #ecfdf5;
+          border-left: 5px solid #10b981;
+          padding: 20px 25px;
           margin: 20px 0;
+          border-radius: 0 8px 8px 0;
+        }
+        .benefits-box strong {
+          color: #065f46;
+          font-size: 15px;
+          display: block;
+          margin-bottom: 10px;
+        }
+        .benefits-box ul { 
+          margin: 10px 0; 
+          padding-left: 20px;
+          color: #047857;
+        }
+        .benefits-box li {
+          margin: 6px 0;
+        }
+        .reminder-box {
+          background: #fef3c7;
+          border-left: 5px solid #f59e0b;
+          padding: 20px 25px;
+          margin: 25px 0;
+          border-radius: 0 8px 8px 0;
+        }
+        .reminder-box strong {
+          color: #92400e;
+          font-size: 16px;
+          display: block;
+          margin-bottom: 8px;
+        }
+        .reminder-box p {
+          color: #78350f;
+          margin: 0;
+        }
+        .help-section {
+          background: #f0f9ff;
+          border-left: 5px solid #0ea5e9;
+          padding: 20px 25px;
+          margin: 25px 0;
+          border-radius: 0 8px 8px 0;
         }
         .footer { 
-          background: #f5f5f5;
-          padding: 20px; 
+          background: #1e293b;
+          color: #cbd5e1;
+          padding: 30px; 
           text-align: center; 
-          font-size: 12px; 
-          color: #666;
-          border-top: 1px solid #ddd;
+          font-size: 13px;
         }
-        .signature { margin-top: 30px; text-align: center; }
+        .footer a {
+          color: #60a5fa;
+          text-decoration: none;
+        }
+        .signature { 
+          margin-top: 40px;
+          padding-top: 25px;
+          border-top: 2px solid #e2e8f0;
+          text-align: center;
+        }
+        .signature-team {
+          font-weight: 700;
+          color: #1e3a8a;
+          font-size: 16px;
+          margin-top: 8px;
+        }
+        a { color: #3b82f6; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">CLOUDIGAN</div>
-          <div class="tagline">We do IT so you don't have to.</div>
-        </div>
-        
-        <div class="content">
-          <p>Hi ${firstName},</p>
-          
-          <p>Welcome to our Cloudigan Family! We are so glad you're here.</p>
-          
-          <p>Your subscription is active, and your download links are ready below.</p>
-          
-          <div class="section-title">Let's get you set up:</div>
-          
-          <div class="step">
-            <span class="step-number">1</span>
-            <strong>Download Home Protect</strong>
-            <p>Use the link that matches your device:</p>
-            <div class="download-section">
-              <a href="${data.downloadLinks.windows}" class="download-link">Windows Download</a>
-              <a href="${data.downloadLinks.mac}" class="download-link">Mac Download</a>
-              <a href="${data.downloadLinks.linux}" class="download-link">Linux Download</a>
-            </div>
+      <div class="email-wrapper">
+        <div class="container">
+          <div class="header">
+            <div class="logo">CLOUDIGAN</div>
+            <div class="tagline">We do IT so you don't have to.</div>
           </div>
           
-          <div class="step">
-            <span class="step-number">2</span>
-            <strong>Install on your device(s)</strong>
-            <p>Open the file and installation will begin automatically.</p>
+          <div class="content">
+            <div class="greeting">Hi ${firstName},</div>
             
-            <div class="benefits">
-              <p><strong>Once installed, your device will begin receiving:</strong></p>
-              <ul>
-                <li>security protection</li>
-                <li>automatic updates</li>
-                <li>system monitoring</li>
-              </ul>
+            <p>Welcome to our Cloudigan Family! We are so glad you're here.</p>
+            
+            <p>Your subscription is active, and your download links are ready below.</p>
+            
+            <div class="section-title">Let's get you set up:</div>
+            
+            <div class="step-container">
+              <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <div class="step-title">Download Home Protect</div>
+                  <p>Use the link that matches your device:</p>
+                  <div class="download-section">
+                    <a href="${data.downloadLinks.windows}" class="download-link">Windows Download</a>
+                    <a href="${data.downloadLinks.mac}" class="download-link">Mac Download</a>
+                    <a href="${data.downloadLinks.linux}" class="download-link">Linux Download</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <div class="step-title">Install on your device(s)</div>
+                  <p>Open the file and installation will begin automatically.</p>
+                  
+                  <div class="benefits-box">
+                    <strong>Once installed, your device will begin receiving:</strong>
+                    <ul>
+                      <li>security protection</li>
+                      <li>automatic updates</li>
+                      <li>system monitoring</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <div class="step-title">That's it—you're covered</div>
+                  <p>After installation, everything runs quietly in the background. If something needs your attention, we'll send you a simple email with next steps.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="reminder-box">
+              <strong>A quick reminder</strong>
+              <p>Your plan covers your devices. If you'd like to protect more devices later, you can upgrade anytime.</p>
+            </div>
+            
+            <div class="section-title">Need help?</div>
+            
+            <div class="help-section">
+              <p style="margin: 0;">Home Protect is designed to be simple and hands-off, but if you have questions, send a message to <a href="mailto:hello@cloudigan.com">hello@cloudigan.com</a> and we'll point you in the right direction.</p>
+            </div>
+            
+            <div class="signature">
+              <p style="margin: 0;">Thanks again for trusting Cloudigan.</p>
+              <p class="signature-team">– The Cloudigan Team</p>
             </div>
           </div>
           
-          <div class="step">
-            <span class="step-number">3</span>
-            <strong>That's it—you're covered</strong>
-            <p>After installation, everything runs quietly in the background. If something needs your attention, we'll send you a simple email with next steps.</p>
+          <div class="footer">
+            <p style="margin: 0 0 10px 0;">&copy; ${new Date().getFullYear()} Cloudigan IT Solutions. All rights reserved.</p>
+            <p style="margin: 0;">This email was sent to ${data.customerEmail}</p>
+            <p style="margin: 15px 0 0 0;"><a href="https://www.cloudigan.com">www.cloudigan.com</a></p>
           </div>
-          
-          <div class="reminder">
-            <strong>A quick reminder</strong>
-            <p>Your plan covers your devices. If you'd like to protect more devices later, you can upgrade anytime.</p>
-          </div>
-          
-          <div class="section-title">Need help?</div>
-          
-          <p>Home Protect is designed to be simple and hands-off, but if you have questions, send a message to <a href="mailto:hello@cloudigan.com">hello@cloudigan.com</a> and we'll point you in the right direction.</p>
-          
-          <div class="signature">
-            <p>Thanks again for trusting Cloudigan.</p>
-            <p><strong>– The Cloudigan Team</strong></p>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Cloudigan IT Solutions. All rights reserved.</p>
-          <p>This email was sent to ${data.customerEmail}</p>
         </div>
       </div>
     </body>
