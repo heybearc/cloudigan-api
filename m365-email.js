@@ -1,3 +1,4 @@
+require('dotenv').config();
 /**
  * M365 Email Integration - Simplified for email client compatibility
  */
