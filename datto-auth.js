@@ -2,6 +2,8 @@
  * Automated Datto RMM OAuth token management using Playwright
  */
 
+require('dotenv').config();
+
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
