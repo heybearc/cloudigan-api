@@ -21,11 +21,11 @@ async function insertCustomerDownload(data) {
 
   const item = {
     sessionId: data.sessionId,
-    siteUid: data.siteUid,
+    dattoSiteUid: data.siteUid,
     customerEmail: data.customerEmail,
     customerName: data.customerName || data.customerEmail,
     windowsDownloadLink: data.downloadLinks.windows,
-    macDownloadLink: data.downloadLinks.mac,
+    macOsDownloadLink: data.downloadLinks.mac,
     linuxDownloadLink: data.downloadLinks.linux,
     createdDate: new Date().toISOString()
   };
