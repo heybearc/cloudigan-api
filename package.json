@@ -1,6 +1,6 @@
 {
   "name": "stripe-datto-integration",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Webhook handler to integrate Stripe checkout with Datto RMM site creation",
   "main": "webhook-handler.js",
   "scripts": {
