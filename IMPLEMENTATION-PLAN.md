@@ -18,6 +18,8 @@
 - [x] HAProxy routing configuration (effort: S) - Mar 17
 - [x] M365 OAuth2 email integration (effort: M) - Mar 17
 - [x] MCP server integration for deployment management (effort: S) - Mar 18
+- [x] Wix Thank-You Page Setup (effort: S) - Mar 18
+- [x] Error Handling & Monitoring (effort: M) - Mar 18
 
 ---
 
@@ -25,15 +27,9 @@
 
 ### High Priority
 
-- [ ] **Wix Thank-You Page Setup** (effort: S) - Configure Wix thank-you page to query CMS by session ID and display download links dynamically.
-
-- [ ] **SendGrid Email Integration** (effort: M) - Optional backup delivery method. Send download links via email using SendGrid API.
-
-- [ ] **Error Handling & Monitoring** (effort: M) - Comprehensive error handling, logging, and alerting for webhook failures.
+None currently - Phase 2 complete!
 
 ### Medium Priority
-
-- [ ] **Webhook Retry Logic** (effort: S) - Implement retry mechanism for failed Stripe webhook processing.
 
 - [ ] **Admin Dashboard** (effort: L) - Simple dashboard to view webhook events, customer downloads, and system health.
 

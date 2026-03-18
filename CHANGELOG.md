@@ -11,6 +11,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-03-18
+
+### Added
+- **Comprehensive Monitoring & Error Handling**
+  - Structured logging with Winston
+    - Correlation IDs for request tracking
+    - JSON structured logs with rotation (10MB, 5 files)
+    - Separate error and combined log files
+  - Prometheus metrics endpoint (`/metrics`)
+    - Webhook processing metrics (count, duration)
+    - Datto API metrics (requests, duration)
+    - Email delivery metrics
+    - Error tracking by type
+    - Active operations gauge
+    - Default Node.js metrics (CPU, memory)
+  - Retry logic with exponential backoff
+    - Automatic retry for transient failures
+    - Circuit breaker pattern (5 failures → open)
+    - Jitter to prevent thundering herd
+  - Error alerting via M365 email
+    - Critical error notifications
+    - 5-minute cooldown to prevent spam
+    - HTML formatted alerts with full context
+  - Custom error classes
+    - WebhookValidationError, DattoApiError, DattoAuthError
+    - EmailError, WixCmsError, StripeApiError
+    - ConfigurationError, RateLimitError, TimeoutError
+  - Enhanced health check endpoint
+    - Circuit breaker status
+    - Alerter status
+    - Service metadata
+
+### Changed
+- Main webhook handler enhanced with:
+  - Structured logging throughout
+  - Metrics recording for all operations
+  - Retry logic for Datto API calls
+  - Error alerting for critical failures
+  - Correlation IDs in all responses
+- Health endpoint now returns detailed service status
+
+### Infrastructure
+- Grafana dashboard configuration
+- Prometheus alert rules (8 alerts)
+- Integration with homelab monitoring stack (CT150)
+- Log directory structure (`logs/error.log`, `logs/combined.log`)
+
+### Documentation
+- `monitoring/README.md` - Complete monitoring setup guide
+- `MONITORING-DEPLOYMENT.md` - Step-by-step deployment guide
+- `monitoring/grafana-dashboard.json` - Dashboard configuration
+- `monitoring/prometheus-alerts.yml` - Alert rules
+
+### Testing
+- ✅ Structured logging verified
+- ✅ Metrics endpoint functional
+- ✅ Retry logic tested
+- ✅ Error alerting tested
+- ✅ Circuit breaker tested
+- Ready for STANDBY deployment
+
+---
+
 ## [1.1.0] - 2026-03-18
 
 ### Added

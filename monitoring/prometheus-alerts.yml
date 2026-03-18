@@ -1,0 +1,108 @@
+groups:
+  - name: cloudigan_api_alerts
+    interval: 30s
+    rules:
+      # High error rate alert
+      - alert: CloudiganAPIHighErrorRate
+        expr: |
+          (
+            sum(rate(cloudigan_api_errors_total[5m])) 
+            / 
+            sum(rate(cloudigan_api_webhooks_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudigan-api
+        annotations:
+          summary: "High error rate detected in Cloudigan API"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+          
+      # Critical error rate alert
+      - alert: CloudiganAPICriticalErrorRate
+        expr: |
+          (
+            sum(rate(cloudigan_api_errors_total[5m])) 
+            / 
+            sum(rate(cloudigan_api_webhooks_total[5m]))
+          ) > 0.25
+        for: 2m
+        labels:
+          severity: critical
+          service: cloudigan-api
+        annotations:
+          summary: "CRITICAL: Very high error rate in Cloudigan API"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 25%)"
+          
+      # Webhook processing slow
+      - alert: CloudiganAPISlowWebhookProcessing
+        expr: |
+          histogram_quantile(0.95, 
+            rate(cloudigan_api_webhook_duration_seconds_bucket[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudigan-api
+        annotations:
+          summary: "Slow webhook processing detected"
+          description: "95th percentile processing time is {{ $value }}s (threshold: 10s)"
+          
+      # Datto API failures
+      - alert: CloudiganAPIDattoAPIFailures
+        expr: |
+          sum(rate(cloudigan_api_datto_requests_total{status="error"}[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudigan-api
+        annotations:
+          summary: "Datto API failures detected"
+          description: "Datto API error rate: {{ $value }} errors/sec"
+          
+      # No webhooks received (possible issue)
+      - alert: CloudiganAPINoWebhooks
+        expr: |
+          sum(rate(cloudigan_api_webhooks_total[10m])) == 0
+        for: 30m
+        labels:
+          severity: info
+          service: cloudigan-api
+        annotations:
+          summary: "No webhooks received in 30 minutes"
+          description: "This might be normal or could indicate a configuration issue"
+          
+      # Service down
+      - alert: CloudiganAPIDown
+        expr: up{job="cloudigan-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudigan-api
+        annotations:
+          summary: "Cloudigan API service is down"
+          description: "The Cloudigan API service on {{ $labels.instance }} is not responding"
+          
+      # High memory usage
+      - alert: CloudiganAPIHighMemory
+        expr: |
+          process_resident_memory_bytes{job="cloudigan-api"} > 500000000
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudigan-api
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanize }}B (threshold: 500MB)"
+          
+      # Email delivery failures
+      - alert: CloudiganAPIEmailFailures
+        expr: |
+          sum(rate(cloudigan_api_emails_total{status="error"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudigan-api
+        annotations:
+          summary: "Email delivery failures detected"
+          description: "Email error rate: {{ $value }} errors/sec"
