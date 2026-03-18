@@ -27,6 +27,9 @@ const {
 const { getAlerter } = require('./lib/alerting');
 
 const dattoAuth = require('./datto-auth');
+const { generateDownloadLinks } = require('./download-links');
+const { insertCustomerDownload } = require('./wix-cms');
+const { sendWelcomeEmail } = require('./sendgrid-email');
 
 const app = express();
 const alerter = getAlerter();
@@ -244,20 +247,57 @@ app.post('/webhook/stripe',
             email: customerData.email
           });
 
-          // Get agent download link
-          const downloadLink = await getAgentDownloadLink(dattoSite.uid, requestLogger);
+          // Generate all platform download links
+          const downloadLinks = generateDownloadLinks(dattoSite.uid);
           
-          requestLogger.info('Agent download link retrieved', {
+          requestLogger.info('Download links generated', {
             siteUid: dattoSite.uid,
-            downloadLink
+            platforms: Object.keys(downloadLinks)
           });
 
-          // Store the download link in Stripe metadata
+          // Insert into Wix CMS (if configured)
+          if (process.env.WIX_API_KEY && process.env.WIX_SITE_ID) {
+            try {
+              await insertCustomerDownload({
+                sessionId: session.id,
+                siteUid: dattoSite.uid,
+                customerEmail: customerData.email,
+                customerName: customerData.companyName || customerData.email,
+                downloadLinks
+              });
+              requestLogger.info('Wix CMS item created', { sessionId: session.id });
+            } catch (error) {
+              requestLogger.warn('Wix CMS insert failed (non-critical)', { error: error.message });
+            }
+          } else {
+            requestLogger.info('Wix CMS not configured - skipping');
+          }
+
+          // Send welcome email (if configured)
+          if (process.env.SENDGRID_API_KEY) {
+            try {
+              await sendWelcomeEmail({
+                customerEmail: customerData.email,
+                customerName: customerData.companyName || customerData.email,
+                downloadLinks,
+                siteUid: dattoSite.uid
+              });
+              requestLogger.info('Welcome email sent', { email: customerData.email });
+            } catch (error) {
+              requestLogger.warn('Email send failed (non-critical)', { error: error.message });
+            }
+          } else {
+            requestLogger.info('SendGrid not configured - skipping email');
+          }
+
+          // Store the download links in Stripe metadata
           await updateStripeMetadata(
             session.customer,
             {
               datto_site_uid: dattoSite.uid,
-              datto_agent_download: downloadLink,
+              windows_download: downloadLinks.windows,
+              mac_download: downloadLinks.mac,
+              linux_download: downloadLinks.linux,
             },
             requestLogger
           );
