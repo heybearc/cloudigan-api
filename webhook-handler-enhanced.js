@@ -29,7 +29,7 @@ const { getAlerter } = require('./lib/alerting');
 const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
-const { sendWelcomeEmail } = require('./sendgrid-email');
+const { sendWelcomeEmail } = require('./m365-email');
 
 const app = express();
 const alerter = getAlerter();
@@ -274,7 +274,7 @@ app.post('/webhook/stripe',
           }
 
           // Send welcome email (if configured)
-          if (process.env.SENDGRID_API_KEY) {
+          if (process.env.M365_CLIENT_ID) {
             try {
               await sendWelcomeEmail({
                 customerEmail: customerData.email,
@@ -287,7 +287,7 @@ app.post('/webhook/stripe',
               requestLogger.warn('Email send failed (non-critical)', { error: error.message });
             }
           } else {
-            requestLogger.info('SendGrid not configured - skipping email');
+            requestLogger.info('M365 email not configured - skipping email');
           }
 
           // Store the download links in Stripe metadata
