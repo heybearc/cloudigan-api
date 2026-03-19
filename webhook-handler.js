@@ -305,25 +305,11 @@ app.post('/webhook/stripe',
             linux: downloadLinks.linux
           });
 
-          // Insert into Wix CMS (if configured)
-          if (process.env.WIX_API_KEY && process.env.WIX_SITE_ID) {
-            try {
-              await insertCustomerDownload({
-                sessionId: session.id,
-                siteUid: dattoSite.uid,
-                customerEmail: customerData.email,
-                customerName: customerData.displayName || customerData.email,
-                companyName: customerData.companyName,
-                isBusinessProduct: customerData.isBusinessProduct,
-                downloadLinks
-              });
-              requestLogger.info('Wix CMS item created', { sessionId: session.id });
-            } catch (error) {
-              requestLogger.warn('Wix CMS insert failed (non-critical)', { error: error.message });
-            }
-          } else {
-            requestLogger.info('Wix CMS not configured - skipping');
-          }
+          // TODO: Wix CMS integration disabled - requires OAuth app setup
+          // Wix API Keys don't work for site-level CMS data operations
+          // Need to create Wix OAuth app with access tokens that refresh every 4 hours
+          // See: https://dev.wix.com/docs/build-apps/develop-your-app/access/authentication/authenticate-using-oauth
+          requestLogger.info('Wix CMS integration disabled - requires OAuth app setup');
 
           // Send welcome email (if configured)
           if (process.env.M365_CLIENT_ID) {
