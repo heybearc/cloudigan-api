@@ -345,17 +345,24 @@ app.post('/webhook/stripe',
             requestLogger.info('M365 email not configured - skipping email');
           }
 
-          // Store the download links in Stripe metadata
-          await updateStripeMetadata(
-            session.customer,
-            {
-              datto_site_uid: dattoSite.uid,
-              windows_download: downloadLinks.windows,
-              mac_download: downloadLinks.mac,
-              linux_download: downloadLinks.linux,
-            },
-            requestLogger
-          );
+          // Store the download links in Stripe metadata (non-critical)
+          try {
+            await updateStripeMetadata(
+              session.customer,
+              {
+                datto_site_uid: dattoSite.uid,
+                windows_download: downloadLinks.windows,
+                mac_download: downloadLinks.mac,
+                linux_download: downloadLinks.linux,
+              },
+              requestLogger
+            );
+          } catch (error) {
+            requestLogger.warn('Stripe metadata update failed (non-critical)', { 
+              error: error.message,
+              customerId: session.customer 
+            });
+          }
 
           const duration = (Date.now() - startTime) / 1000;
           recordWebhook(event.type, 'success', duration);
