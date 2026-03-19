@@ -30,9 +30,13 @@ const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
 const { sendWelcomeEmail } = require('./m365-email');
+const path = require('path');
 
 const app = express();
 const alerter = getAlerter();
+
+// Serve static files from public directory (for logo and assets)
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Circuit breaker for Datto API
 const dattoCircuitBreaker = new CircuitBreaker({
