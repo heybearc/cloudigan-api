@@ -26,6 +26,8 @@ const DATTO_CONFIG = {
 
 // Datto RMM API Integration - Using OAuth token
 const dattoAuth = require('./datto-auth');
+const { generateDownloadLinks } = require('./download-links');
+const { sendWelcomeEmail } = require('./m365-email');
 
 /**
  * Create a new site in Datto RMM
@@ -111,16 +113,41 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
       const downloadLink = await getAgentDownloadLink(dattoSite.uid);
       console.log('Agent download link:', downloadLink);
 
-      // Store the download link in Stripe metadata for later retrieval
+      // Generate download links for all platforms
+      const downloadLinks = generateDownloadLinks(dattoSite.uid);
+
+      // Store the download links in Stripe metadata for later retrieval
       await stripe.customers.update(session.customer, {
         metadata: {
           datto_site_uid: dattoSite.uid,
-          datto_agent_download: downloadLink,
+          windows_download: downloadLinks.windows,
+          mac_download: downloadLinks.mac,
+          linux_download: downloadLinks.linux,
         },
       });
 
-      // TODO: Send email to customer with download link
-      // TODO: Update your database with the Datto site info
+      // Determine if this is a business product based on metadata
+      const isBusinessProduct = session.metadata?.product_type === 'business' || 
+                                session.metadata?.is_business === 'true' ||
+                                !session.metadata?.product_type; // Default to business if not specified
+
+      // Send welcome email with download links
+      if (process.env.M365_CLIENT_ID) {
+        try {
+          await sendWelcomeEmail({
+            customerName: session.customer_details.name,
+            customerEmail: session.customer_details.email,
+            companyName: session.metadata?.company_name || session.customer_details.name,
+            isBusinessProduct: isBusinessProduct,
+            downloadLinks: downloadLinks
+          });
+          console.log('Welcome email sent to:', session.customer_details.email);
+        } catch (emailError) {
+          console.error('Failed to send welcome email (non-critical):', emailError.message);
+        }
+      } else {
+        console.log('M365 email not configured - skipping welcome email');
+      }
 
       res.json({ received: true, dattoSiteUid: dattoSite.uid });
     } catch (error) {
