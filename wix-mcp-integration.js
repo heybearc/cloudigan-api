@@ -1,25 +1,47 @@
 /**
- * Wix CMS Integration using MCP Server
- * This module provides a bridge between the webhook handler and Wix MCP server
- * The MCP server handles authentication and token refresh automatically
+ * Wix CMS Integration using OAuth
+ * This module uses OAuth access tokens that are refreshed every 3 hours
+ * Token refresh is handled by scripts/refresh-wix-token.sh (cron job)
  */
 
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+const TOKEN_FILE = path.join(__dirname, '.wix-tokens.json');
 
 const WIX_CONFIG = {
   siteId: process.env.WIX_SITE_ID,
   accountId: process.env.WIX_ACCOUNT_ID,
-  apiKey: process.env.WIX_API_KEY,
   collectionId: 'CustomerDownloads'
 };
+
+/**
+ * Get current OAuth access token from token file
+ */
+function getAccessToken() {
+  try {
+    if (!fs.existsSync(TOKEN_FILE)) {
+      throw new Error('Wix token file not found. Run token refresh script first.');
+    }
+    const tokens = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf8'));
+    if (!tokens.access_token) {
+      throw new Error('No access token found in token file');
+    }
+    return tokens.access_token;
+  } catch (error) {
+    console.error('Failed to read Wix access token:', error.message);
+    throw error;
+  }
+}
 
 /**
  * Insert customer download record into Wix CMS using MCP server
  * The MCP server handles authentication and token refresh automatically
  */
 async function insertCustomerDownload(data) {
-  if (!WIX_CONFIG.siteId || !WIX_CONFIG.apiKey) {
-    throw new Error('Wix CMS not configured - missing WIX_SITE_ID or WIX_API_KEY');
+  if (!WIX_CONFIG.siteId) {
+    throw new Error('Wix CMS not configured - missing WIX_SITE_ID');
   }
 
   const item = {
@@ -37,7 +59,10 @@ async function insertCustomerDownload(data) {
   };
 
   try {
-    // Use Wix Data API v2 - MCP server handles authentication
+    // Get current OAuth access token
+    const accessToken = getAccessToken();
+    
+    // Use Wix Data API v2 with OAuth authentication
     const response = await axios.post(
       `https://www.wixapis.com/wix-data/v2/items`,
       {
@@ -48,9 +73,8 @@ async function insertCustomerDownload(data) {
       },
       {
         headers: {
-          'Authorization': WIX_CONFIG.apiKey,
+          'Authorization': accessToken,
           'wix-site-id': WIX_CONFIG.siteId,
-          'wix-account-id': WIX_CONFIG.accountId,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
