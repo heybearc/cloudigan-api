@@ -227,11 +227,16 @@ app.post('/webhook/stripe',
           const companyName = companyNameField?.text?.value || session.metadata?.company_name;
           const customerName = session.customer_details.name;
           
+          // Extract device quantity from line items (if available)
+          // Stripe checkout session includes line_items in expanded data
+          const deviceQuantity = session.line_items?.data?.[0]?.quantity || session.metadata?.quantity || 1;
+          
           // Log extracted data for debugging
           requestLogger.info('Extracted customer data', { 
             companyName,
             customerName,
-            hasCompanyName: !!companyName
+            hasCompanyName: !!companyName,
+            deviceQuantity
           });
           
           const customerData = {
@@ -243,6 +248,7 @@ app.post('/webhook/stripe',
             customerId: session.customer,
             productId: session.metadata?.product_id,
             isBusinessProduct: !!companyName, // Flag to identify business vs personal
+            deviceQuantity: deviceQuantity
           };
 
           requestLogger.info('Processing subscription', {
@@ -302,7 +308,8 @@ app.post('/webhook/stripe',
                 companyName: customerData.companyName,
                 isBusinessProduct: customerData.isBusinessProduct,
                 downloadLinks,
-                siteUid: dattoSite.uid
+                siteUid: dattoSite.uid,
+                deviceQuantity: customerData.deviceQuantity
               });
               requestLogger.info('Welcome email sent', { email: customerData.email });
             } catch (error) {

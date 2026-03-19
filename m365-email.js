@@ -40,7 +40,7 @@ function getBusinessEmailTemplate(data) {
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+            <td style="background-color: #1e3a8a; padding: 40px 30px; text-align: center;">
               <img src="https://api.cloudigan.net/public/cloudigan-logo.png" alt="Cloudigan IT Solutions" width="320" style="width: 320px; max-width: 90%; height: auto; display: block; margin: 0 auto 15px auto; border: 0;" />
               
               <p style="margin: 0; padding: 0; color: #ffffff; font-size: 15px; font-style: italic; opacity: 0.95;">We do IT so you don't have to.</p>
@@ -195,7 +195,7 @@ function getHomeProtectEmailTemplate(data) {
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+            <td style="background-color: #1e3a8a; padding: 40px 30px; text-align: center;">
               <img src="https://api.cloudigan.net/public/cloudigan-logo.png" alt="Cloudigan IT Solutions" width="320" style="width: 320px; max-width: 90%; height: auto; display: block; margin: 0 auto 15px auto; border: 0;" />
               
               <p style="margin: 0; padding: 0; color: #ffffff; font-size: 15px; font-style: italic; opacity: 0.95;">We do IT so you don't have to.</p>
@@ -289,7 +289,7 @@ function getHomeProtectEmailTemplate(data) {
                 <tr>
                   <td>
                     <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #92400e;">A quick reminder</p>
-                    <p style="margin: 0; font-size: 14px; color: #78350f; line-height: 1.6;">Your plan covers your devices. If you'd like to protect more devices later, you can upgrade anytime.</p>
+                    <p style="margin: 0; font-size: 14px; color: #78350f; line-height: 1.6;">Your plan covers <strong>${data.deviceQuantity} ${data.deviceQuantity === 1 ? 'device' : 'devices'}</strong>. If you'd like to protect more devices later, you can upgrade anytime.</p>
                   </td>
                 </tr>
               </table>
