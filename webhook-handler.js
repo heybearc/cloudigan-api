@@ -195,23 +195,44 @@ app.post('/webhook/stripe',
   async (req, res) => {
     const startTime = Date.now();
     const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecretProd = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecretTest = process.env.STRIPE_WEBHOOK_SECRET_TEST;
     const requestLogger = req.logger;
 
     let event;
+    let isTestMode = false;
 
-    try {
-      // Verify webhook signature
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      requestLogger.info('Webhook signature verified', { eventType: event.type });
-      
-    } catch (err) {
+    // Try production secret first, then test secret
+    const secrets = [
+      { secret: webhookSecretProd, mode: 'production' },
+      { secret: webhookSecretTest, mode: 'test' }
+    ].filter(s => s.secret); // Only try secrets that are configured
+
+    let lastError;
+    for (const { secret, mode } of secrets) {
+      try {
+        event = stripe.webhooks.constructEvent(req.body, sig, secret);
+        isTestMode = mode === 'test';
+        requestLogger.info('Webhook signature verified', { 
+          eventType: event.type,
+          mode: mode
+        });
+        break; // Successfully verified
+      } catch (err) {
+        lastError = err;
+        // Continue to next secret
+      }
+    }
+
+    if (!event) {
+      // None of the secrets worked
       const duration = (Date.now() - startTime) / 1000;
       recordWebhook('unknown', 'signature_failed', duration);
       recordError('webhook_validation', 'signature_verification');
       
-      logError(requestLogger, err, {
-        operation: 'webhookSignatureVerification'
+      logError(requestLogger, lastError, {
+        operation: 'webhookSignatureVerification',
+        triedSecrets: secrets.length
       });
       
       return res.status(400).json(
