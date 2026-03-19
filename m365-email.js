@@ -32,15 +32,15 @@ function getBusinessEmailTemplate(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #ffffff; width: 100% !important; min-width: 100%;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px 0; margin: 0;">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; width: 100% !important; min-width: 100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px 0; margin: 0;">
     <tr>
       <td align="center" style="padding: 0;">
-        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; border-radius: 8px; overflow: hidden;">
           
           <!-- Header -->
           <tr>
-            <td style="background-color: #ffffff; padding: 40px 30px; text-align: center; border-bottom: 3px solid #3b82f6;">
+            <td style="padding: 40px 30px; text-align: center; border-bottom: 3px solid #3b82f6;">
               <img src="https://api.cloudigan.net/public/cloudigan-logo.png" alt="Cloudigan IT Solutions" width="320" style="width: 320px; max-width: 90%; height: auto; display: block; margin: 0 auto 15px auto; border: 0;" />
               
               <p style="margin: 0; padding: 0; color: #1e3a8a; font-size: 15px; font-style: italic;">We do IT so you don't have to.</p>
@@ -189,15 +189,15 @@ function getHomeProtectEmailTemplate(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #ffffff; width: 100% !important; min-width: 100%;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px 0; margin: 0;">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; width: 100% !important; min-width: 100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px 0; margin: 0;">
     <tr>
       <td align="center" style="padding: 0;">
-        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; border-radius: 8px; overflow: hidden;">
           
           <!-- Header -->
           <tr>
-            <td style="background-color: #ffffff; padding: 40px 30px; text-align: center; border-bottom: 3px solid #3b82f6;">
+            <td style="padding: 40px 30px; text-align: center; border-bottom: 3px solid #3b82f6;">
               <img src="https://api.cloudigan.net/public/cloudigan-logo.png" alt="Cloudigan IT Solutions" width="320" style="width: 320px; max-width: 90%; height: auto; display: block; margin: 0 auto 15px auto; border: 0;" />
               
               <p style="margin: 0; padding: 0; color: #1e3a8a; font-size: 15px; font-style: italic;">We do IT so you don't have to.</p>
