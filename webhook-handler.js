@@ -158,39 +158,6 @@ async function getAgentDownloadLink(siteUid, requestLogger) {
 }
 
 /**
- * Update Stripe customer metadata
- */
-async function updateStripeMetadata(customerId, metadata, requestLogger) {
-  try {
-    await retryAsync(
-      async () => {
-        return await stripe.customers.update(customerId, { metadata });
-      },
-      {
-        operationName: 'updateStripeMetadata',
-        logger: requestLogger,
-        maxRetries: 2
-      }
-    );
-    
-    requestLogger.info('Stripe metadata updated', { customerId });
-    
-  } catch (error) {
-    recordError('stripe_api', 'update_metadata');
-    
-    logError(requestLogger, error, {
-      operation: 'updateStripeMetadata',
-      customerId
-    });
-    
-    throw new StripeApiError('Failed to update Stripe metadata', {
-      originalError: error.message,
-      customerId
-    });
-  }
-}
-
-/**
  * Stripe Webhook Handler with enhanced error handling
  */
 app.post('/webhook/stripe', 
@@ -345,24 +312,11 @@ app.post('/webhook/stripe',
             requestLogger.info('M365 email not configured - skipping email');
           }
 
-          // Store the download links in Stripe metadata (non-critical)
-          try {
-            await updateStripeMetadata(
-              session.customer,
-              {
-                datto_site_uid: dattoSite.uid,
-                windows_download: downloadLinks.windows,
-                mac_download: downloadLinks.mac,
-                linux_download: downloadLinks.linux,
-              },
-              requestLogger
-            );
-          } catch (error) {
-            requestLogger.warn('Stripe metadata update failed (non-critical)', { 
-              error: error.message,
-              customerId: session.customer 
-            });
-          }
+          // Download links are stored in:
+          // 1. Wix CMS CustomerDownloads collection (for checkout confirmation page)
+          // 2. Welcome email sent to customer
+          // No need to store in Stripe metadata - not used anywhere
+          requestLogger.info('Download data stored in Wix CMS and sent via email');
 
           const duration = (Date.now() - startTime) / 1000;
           recordWebhook(event.type, 'success', duration);
