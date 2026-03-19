@@ -23,6 +23,7 @@ async function insertCustomerDownload(data) {
   }
 
   const item = {
+    title: `${data.customerName || data.customerEmail} - ${new Date().toLocaleDateString()}`,
     sessionId: data.sessionId,
     dattoSiteUid: data.siteUid,
     customerEmail: data.customerEmail,
