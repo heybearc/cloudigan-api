@@ -32,8 +32,8 @@ function getBusinessEmailTemplate(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; width: 100% !important; min-width: 100%;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f7f9; padding: 20px 0; margin: 0;">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #ffffff; width: 100% !important; min-width: 100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px 0; margin: 0;">
     <tr>
       <td align="center" style="padding: 0;">
         <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -59,9 +59,7 @@ function getBusinessEmailTemplate(data) {
               
               <h2 style="margin: 30px 0 15px 0; padding: 0 0 8px 0; font-size: 20px; color: #1e3a8a; border-bottom: 3px solid #3b82f6;">Let's get your devices connected</h2>
               
-              <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">You'll want to install the agent on <strong>each of the devices included in your plan</strong>.</p>
-              
-              <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">Each device you're covering should have the software installed so we can begin monitoring and protecting it.</p>
+              <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">Your plan covers <strong>${data.deviceQuantity} ${data.deviceQuantity === 1 ? 'device' : 'devices'}</strong>. Each device should have the agent installed so we can begin monitoring and protecting it.</p>
               
               <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">If you haven't downloaded the installer yet, you can do so here:</p>
               
@@ -69,10 +67,10 @@ function getBusinessEmailTemplate(data) {
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 2px solid #cbd5e1; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <tr>
                   <td>
-                    <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Windows Download:</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="padding: 8px 0;">
+                          <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Windows Download:</p>
                           <a href="${data.downloadLinks.windows}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Download for Windows</a>
                         </td>
                       </tr>
@@ -81,10 +79,10 @@ function getBusinessEmailTemplate(data) {
                 </tr>
                 <tr>
                   <td style="padding-top: 15px;">
-                    <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Mac Download:</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="padding: 8px 0;">
+                          <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Mac Download:</p>
                           <a href="${data.downloadLinks.mac}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Download for Mac</a>
                         </td>
                       </tr>
@@ -93,10 +91,10 @@ function getBusinessEmailTemplate(data) {
                 </tr>
                 <tr>
                   <td style="padding-top: 15px;">
-                    <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Linux Download:</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="padding: 8px 0;">
+                          <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #475569;">Linux Download:</p>
                           <a href="${data.downloadLinks.linux}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Download for Linux</a>
                         </td>
                       </tr>
@@ -105,9 +103,13 @@ function getBusinessEmailTemplate(data) {
                 </tr>
               </table>
               
-              <p style="margin: 20px 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">Once it is downloaded, click on the file and install will happen automatically.</p>
+              <h3 style="margin: 25px 0 12px 0; font-size: 17px; font-weight: 700; color: #1e3a8a;">Installation Instructions:</h3>
               
-              <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">You can forward these links to your team or install them directly on each device—it's totally fine either way.</p>
+              <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;"><strong>Option 1: Install on this device</strong><br/>Click the appropriate download link above, then run the installer. Installation takes about 30 seconds and requires no configuration.</p>
+              
+              <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;"><strong>Option 2: Distribute to your team</strong><br/>Forward this email to your team members, or share the download links via your preferred communication channel (Slack, Teams, etc.). Each team member can install the agent on their own device by clicking the link that matches their operating system.</p>
+              
+              <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;"><strong>Option 3: IT-managed deployment</strong><br/>If you have an IT administrator, they can download the installers and deploy them across your organization using your existing software deployment tools. The installers work with standard deployment methods (GPO, MDM, etc.).</p>
               
               <!-- Tips Box -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 5px solid #f59e0b; border-radius: 0 6px 6px 0; padding: 20px; margin: 20px 0;">
@@ -135,7 +137,7 @@ function getBusinessEmailTemplate(data) {
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f9ff; border-left: 5px solid #0ea5e9; border-radius: 0 6px 6px 0; padding: 20px; margin: 20px 0;">
                 <tr>
                   <td>
-                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #0c4a6e;"><strong>Your Cloudigan Rep will be reaching out within 24 hours</strong> to give you the official welcome. We'll walk through everything together and make sure your setup fits your business the way it should.</p>
+                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #0c4a6e;"><strong>Your Cloudigan Account Manager will be reaching out within 24 hours</strong> to give you the official welcome. We'll walk through everything together and make sure your setup fits your business the way it should.</p>
                   </td>
                 </tr>
               </table>
