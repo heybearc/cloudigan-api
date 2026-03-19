@@ -50,7 +50,8 @@ async function insertCustomerDownload(data) {
           'Authorization': WIX_CONFIG.apiKey,
           'wix-site-id': WIX_CONFIG.siteId,
           'wix-account-id': WIX_CONFIG.accountId,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       }
     );
