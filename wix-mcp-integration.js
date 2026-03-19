@@ -50,7 +50,6 @@ async function insertCustomerDownload(data) {
         headers: {
           'Authorization': WIX_CONFIG.apiKey,
           'wix-site-id': WIX_CONFIG.siteId,
-          'wix-account-id': WIX_CONFIG.accountId,
           'Content-Type': 'application/json'
         }
       }
