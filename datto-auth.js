@@ -115,6 +115,63 @@ async function getNewToken() {
 }
 
 /**
+ * Refresh OAuth token using refresh_token (no browser required)
+ */
+async function refreshToken() {
+  console.log('🔄 Refreshing OAuth token using refresh_token...');
+  
+  try {
+    // Load existing token to get refresh_token
+    const tokenData = await fs.readFile(TOKEN_FILE, 'utf8');
+    const tokenInfo = JSON.parse(tokenData);
+    
+    if (!tokenInfo.refresh_token) {
+      throw new Error('No refresh_token found. Need to generate new token with Playwright.');
+    }
+    
+    // Use refresh_token to get new access_token
+    const tokenParams = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: tokenInfo.refresh_token,
+      client_id: DATTO_CONFIG.clientId,
+    });
+    
+    const tokenResponse = await fetch(DATTO_CONFIG.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: tokenParams.toString(),
+    });
+    
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      throw new Error(`Token refresh failed: ${tokenResponse.status} - ${errorText}`);
+    }
+    
+    const newTokenData = await tokenResponse.json();
+    
+    // Save new token with metadata
+    const newTokenInfo = {
+      access_token: newTokenData.access_token,
+      refresh_token: newTokenData.refresh_token || tokenInfo.refresh_token, // Keep old refresh_token if not provided
+      token_type: newTokenData.token_type,
+      expires_in: newTokenData.expires_in,
+      obtained_at: Date.now(),
+      expires_at: Date.now() + (newTokenData.expires_in * 1000),
+    };
+    
+    await fs.writeFile(TOKEN_FILE, JSON.stringify(newTokenInfo, null, 2));
+    
+    console.log('✅ Token refreshed successfully!');
+    console.log(`   Expires in: ${Math.round(newTokenData.expires_in / 3600)} hours`);
+    
+    return newTokenInfo;
+  } catch (error) {
+    console.error('❌ Token refresh failed:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Get valid OAuth token (from cache only - no auto-refresh)
  * Token must be refreshed manually outside of webhook processing
  */
@@ -168,6 +225,7 @@ async function makeAuthenticatedRequest(endpoint, options = {}) {
 module.exports = {
   getToken,
   getNewToken,
+  refreshToken,
   makeAuthenticatedRequest,
 };
 
@@ -181,10 +239,22 @@ if (require.main === module) {
         token = await getToken();
         console.log('\n✅ Using existing token');
       } catch (error) {
-        // No token exists or expired, generate new one
-        console.log('\n🔄 Generating new token...');
-        const tokenInfo = await getNewToken();
-        token = tokenInfo.access_token;
+        // Token expired or missing - try to refresh first
+        console.log('\n⚠️  Token expired or missing');
+        
+        try {
+          // Try refresh_token first (no browser required)
+          console.log('🔄 Attempting to refresh using refresh_token...');
+          const tokenInfo = await refreshToken();
+          token = tokenInfo.access_token;
+          console.log('✅ Token refreshed successfully!');
+        } catch (refreshError) {
+          // Refresh failed - fall back to Playwright
+          console.log('⚠️  Refresh failed, falling back to Playwright...');
+          console.log('🔄 Generating new token with browser automation...');
+          const tokenInfo = await getNewToken();
+          token = tokenInfo.access_token;
+        }
       }
       console.log('\n🎉 Token ready for use!');
       console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
