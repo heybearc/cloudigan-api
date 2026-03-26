@@ -18,6 +18,7 @@ const DATTO_CONFIG = {
   authUrl: 'https://vidal-api.centrastage.net/auth/oauth/authorize',
   tokenUrl: 'https://vidal-api.centrastage.net/auth/oauth/token',
   clientId: 'public-client',
+  clientSecret: 'public', // OAuth client secret (not API secret)
   redirectUri: 'https://oauth.pstmn.io/v1/callback',
 };
 
@@ -100,11 +101,12 @@ async function getNewToken() {
     });
     
     // Exchange authorization code for token using https module
-    // Datto requires Basic Auth with API key:secret (not client_id)
-    const auth = Buffer.from(`${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
+    // Datto requires Basic Auth with client_id:client_secret
+    // Per Postman config: client_id='public-client', client_secret='public'
+    const auth = Buffer.from(`${DATTO_CONFIG.clientId}:${DATTO_CONFIG.clientSecret}`).toString('base64');
     const postData = tokenParams.toString();
     
-    console.log('Using Basic Auth with API key (first 10 chars):', DATTO_CONFIG.apiKey.substring(0, 10));
+    console.log('Using Basic Auth with client_id:', DATTO_CONFIG.clientId);
     
     const tokenData = await new Promise((resolve, reject) => {
       const options = {
