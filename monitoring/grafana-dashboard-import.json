@@ -1,0 +1,195 @@
+{
+  "title": "Cloudigan API - Webhook Monitoring",
+  "tags": [
+    "cloudigan-api",
+    "webhooks",
+    "datto",
+    "stripe"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Webhook Processing Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(cloudigan_api_webhooks_total[5m])",
+          "legendFormat": "{{event_type}} - {{status}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Webhook Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(cloudigan_api_webhooks_total{status=\"success\"}[5m])) / sum(rate(cloudigan_api_webhooks_total[5m])) * 100",
+          "legendFormat": "Success Rate %"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "Total Webhooks Processed",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(cloudigan_api_webhooks_total)",
+          "legendFormat": "Total"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      }
+    },
+    {
+      "id": 4,
+      "title": "Webhook Processing Duration (p95)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cloudigan_api_webhook_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{event_type}} - p95"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 5,
+      "title": "Datto API Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(cloudigan_api_datto_requests_total{status=\"success\"}[5m])) / sum(rate(cloudigan_api_datto_requests_total[5m])) * 100",
+          "legendFormat": "Success Rate %"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": 6,
+      "title": "Active Operations",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "cloudigan_api_active_operations",
+          "legendFormat": "{{operation}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      }
+    },
+    {
+      "id": 7,
+      "title": "Error Rate by Type",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(cloudigan_api_errors_total[5m])",
+          "legendFormat": "{{type}} - {{operation}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 8,
+      "title": "Datto API Duration (p50, p95, p99)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(cloudigan_api_datto_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(cloudigan_api_datto_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(cloudigan_api_datto_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      }
+    },
+    {
+      "id": 9,
+      "title": "Email Delivery Status",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(cloudigan_api_emails_total[5m])",
+          "legendFormat": "{{provider}} - {{status}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      }
+    },
+    {
+      "id": 10,
+      "title": "Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{job=\"cloudigan-api\"}",
+          "legendFormat": "RSS Memory"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      }
+    }
+  ],
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
+}
