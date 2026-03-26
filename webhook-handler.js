@@ -15,7 +15,8 @@ const {
   recordWebhook, 
   recordDattoApi, 
   recordError,
-  trackAsyncOperation 
+  trackAsyncOperation,
+  recordSignupFlowStage
 } = require('./lib/metrics');
 const { retryAsync, CircuitBreaker } = require('./lib/retry');
 const { 
@@ -30,6 +31,7 @@ const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
 const { sendWelcomeEmail } = require('./m365-email');
+const { startTokenMonitoring } = require('./lib/token-monitor');
 const path = require('path');
 
 const app = express();
@@ -260,7 +262,11 @@ app.post('/webhook/stripe',
           });
 
           // Create site in Datto RMM
+          const dattoStartTime = Date.now();
           const dattoSite = await createDattoSite(customerData, requestLogger);
+          const dattoDuration = (Date.now() - dattoStartTime) / 1000;
+          
+          recordSignupFlowStage('datto_site_creation', 'success', customerData.isBusinessProduct ? 'business' : 'personal', dattoDuration);
           
           requestLogger.info('Datto site created', {
             siteUid: dattoSite.uid,
@@ -281,6 +287,7 @@ app.post('/webhook/stripe',
           // Insert into Wix CMS (if configured)
           if (process.env.WIX_API_KEY && process.env.WIX_SITE_ID) {
             try {
+              const wixStartTime = Date.now();
               const { insertCustomerDownload } = require('./wix-mcp-integration');
               await insertCustomerDownload({
                 sessionId: session.id,
@@ -291,8 +298,11 @@ app.post('/webhook/stripe',
                 isBusinessProduct: customerData.isBusinessProduct,
                 downloadLinks
               });
+              const wixDuration = (Date.now() - wixStartTime) / 1000;
+              recordSignupFlowStage('wix_cms_write', 'success', customerData.isBusinessProduct ? 'business' : 'personal', wixDuration);
               requestLogger.info('Wix CMS record created', { email: customerData.email });
             } catch (error) {
+              recordSignupFlowStage('wix_cms_write', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
               requestLogger.warn('Wix CMS insert failed (non-critical)', { error: error.message });
             }
           } else {
@@ -302,6 +312,7 @@ app.post('/webhook/stripe',
           // Send welcome email (if configured)
           if (process.env.M365_CLIENT_ID) {
             try {
+              const emailStartTime = Date.now();
               await sendWelcomeEmail({
                 customerEmail: customerData.email,
                 customerName: customerData.customerName,
@@ -311,8 +322,11 @@ app.post('/webhook/stripe',
                 siteUid: dattoSite.uid,
                 deviceQuantity: customerData.deviceQuantity
               });
+              const emailDuration = (Date.now() - emailStartTime) / 1000;
+              recordSignupFlowStage('welcome_email', 'success', customerData.isBusinessProduct ? 'business' : 'personal', emailDuration);
               requestLogger.info('Welcome email sent', { email: customerData.email });
             } catch (error) {
+              recordSignupFlowStage('welcome_email', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
               requestLogger.warn('Email send failed (non-critical)', { error: error.message });
             }
           } else {
@@ -475,6 +489,10 @@ app.listen(PORT, () => {
     environment: process.env.NODE_ENV || 'development',
     hostname: os.hostname()
   });
+  
+  // Start token expiration monitoring (checks every hour)
+  startTokenMonitoring(60);
+  
   console.log(`✅ Webhook server running on port ${PORT}`);
   console.log(`📊 Metrics: http://localhost:${PORT}/metrics`);
   console.log(`💚 Health: http://localhost:${PORT}/health`);

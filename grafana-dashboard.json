@@ -1,0 +1,266 @@
+{
+  "dashboard": {
+    "title": "Cloudigan API - Customer Signup Flow & Token Monitoring",
+    "tags": ["cloudigan", "stripe", "datto", "customer-signup"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Datto Token Expiration (Hours Remaining)",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "cloudigan_api_datto_token_hours_until_expiry",
+            "legendFormat": "Hours Until Expiry"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 24, "color": "orange"},
+                {"value": 48, "color": "yellow"},
+                {"value": 72, "color": "green"}
+              ]
+            },
+            "unit": "h",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 2,
+        "title": "Token Refresh Status",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "cloudigan_api_token_refresh_status{token_type=\"datto\"}",
+            "legendFormat": "Datto Token"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "FAILED"},
+              {"type": "value", "value": "1", "text": "SUCCESS"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Customer Signup Flow - Success Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(cloudigan_api_signup_flow_total{status=\"success\"}[5m])",
+            "legendFormat": "{{stage}} - {{product_type}}"
+          },
+          {
+            "expr": "rate(cloudigan_api_signup_flow_total{status=\"failed\"}[5m])",
+            "legendFormat": "{{stage}} - {{product_type}} (FAILED)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Signup Flow Stage Duration (p95)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(cloudigan_api_signup_flow_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{stage}} - {{product_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Signup Flow Stages - Total Count",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(cloudigan_api_signup_flow_total{stage=\"datto_site_creation\",status=\"success\"})",
+            "legendFormat": "Datto Sites Created"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Wix CMS Writes - Total Count",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(cloudigan_api_signup_flow_total{stage=\"wix_cms_write\",status=\"success\"})",
+            "legendFormat": "Wix CMS Records"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "purple"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Welcome Emails Sent - Total Count",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(cloudigan_api_signup_flow_total{stage=\"welcome_email\",status=\"success\"})",
+            "legendFormat": "Emails Sent"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Signup Flow Funnel - Business vs Personal",
+        "type": "bargauge",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+        "targets": [
+          {
+            "expr": "sum by (product_type) (cloudigan_api_signup_flow_total{stage=\"datto_site_creation\",status=\"success\"})",
+            "legendFormat": "{{product_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "id": 9,
+        "title": "Failed Signup Stages",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+        "targets": [
+          {
+            "expr": "sum by (stage, product_type) (cloudigan_api_signup_flow_total{status=\"failed\"})",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "stage": "Stage",
+                "product_type": "Product Type",
+                "Value": "Failed Count"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Webhook Processing Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 38},
+        "targets": [
+          {
+            "expr": "rate(cloudigan_api_webhooks_total{status=\"success\"}[5m])",
+            "legendFormat": "Success"
+          },
+          {
+            "expr": "rate(cloudigan_api_webhooks_total{status=\"error\"}[5m])",
+            "legendFormat": "Error"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20
+            }
+          }
+        }
+      }
+    ]
+  }
+}
