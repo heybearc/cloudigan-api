@@ -100,9 +100,15 @@ async function getNewToken() {
       client_id: DATTO_CONFIG.clientId,
     });
     
+    // Datto requires Basic Auth for token endpoint
+    const auth = Buffer.from(`${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
+    
     const tokenResponse = await fetch(DATTO_CONFIG.tokenUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${auth}`
+      },
       body: tokenParams.toString(),
     });
     
