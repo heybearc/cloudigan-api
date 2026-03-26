@@ -53,15 +53,35 @@ async function getNewToken() {
     
     // Submit form and wait for redirect
     console.log('✅ Submitting login...');
-    await Promise.all([
-      page.waitForNavigation({ timeout: 30000 }),
-      page.click('button[type="submit"]'),
-    ]);
+    await page.click('button[type="submit"]');
     
-    // Wait for redirect to callback URL with authorization code
-    await page.waitForURL(/oauth\.pstmn\.io.*code=/, { timeout: 30000 });
+    // Wait a moment for the page to start loading
+    await page.waitForTimeout(2000);
     
-    const currentUrl = page.url();
+    // Check current URL and page content for debugging
+    let currentUrl = page.url();
+    console.log('📍 Current URL after submit:', currentUrl);
+    
+    // Take screenshot for debugging
+    await page.screenshot({ path: '/tmp/playwright-debug.png' });
+    console.log('📸 Screenshot saved to /tmp/playwright-debug.png');
+    
+    // Check if we're already at the callback URL
+    if (currentUrl.includes('oauth.pstmn.io') && currentUrl.includes('code=')) {
+      console.log('✅ Already at callback URL');
+    } else if (currentUrl.includes('error')) {
+      // Check for error in URL
+      const urlObj = new URL(currentUrl);
+      const error = urlObj.searchParams.get('error');
+      const errorDesc = urlObj.searchParams.get('error_description');
+      throw new Error(`OAuth error: ${error} - ${errorDesc}`);
+    } else {
+      // Wait for redirect to callback URL with authorization code
+      console.log('⏳ Waiting for redirect to callback URL...');
+      await page.waitForURL(/oauth\.pstmn\.io.*code=/, { timeout: 60000 });
+      currentUrl = page.url();
+    }
+    
     const urlParams = new URLSearchParams(new URL(currentUrl).search);
     const authCode = urlParams.get('code');
     
