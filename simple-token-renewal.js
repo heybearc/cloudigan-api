@@ -26,6 +26,7 @@ const DATTO_CONFIG = {
 function requestToken() {
   return new Promise((resolve, reject) => {
     const auth = Buffer.from(`${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
+    const postData = 'grant_type=client_credentials';
     
     const options = {
       hostname: 'vidal-api.centrastage.net',
@@ -35,7 +36,7 @@ function requestToken() {
       headers: {
         'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': 0
+        'Content-Length': Buffer.byteLength(postData)
       }
     };
 
@@ -66,6 +67,7 @@ function requestToken() {
       reject(new Error(`Token request error: ${error.message}`));
     });
 
+    req.write(postData);
     req.end();
   });
 }
