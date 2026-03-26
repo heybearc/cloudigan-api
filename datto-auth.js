@@ -97,6 +97,7 @@ async function getNewToken() {
       grant_type: 'authorization_code',
       code: authCode,
       redirect_uri: DATTO_CONFIG.redirectUri,
+      client_id: DATTO_CONFIG.clientId,
     });
     
     // Exchange authorization code for token using https module
