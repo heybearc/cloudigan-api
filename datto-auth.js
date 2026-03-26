@@ -97,12 +97,11 @@ async function getNewToken() {
       grant_type: 'authorization_code',
       code: authCode,
       redirect_uri: DATTO_CONFIG.redirectUri,
-      client_id: DATTO_CONFIG.clientId,
-      client_secret: DATTO_CONFIG.apiSecretKey, // Required even for public-client
     });
     
     // Exchange authorization code for token using https module
-    // Note: Using public-client which doesn't require authentication
+    // Datto requires Basic Auth with client_id:client_secret
+    const auth = Buffer.from(`${DATTO_CONFIG.clientId}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
     const postData = tokenParams.toString();
     
     const tokenData = await new Promise((resolve, reject) => {
@@ -113,7 +112,8 @@ async function getNewToken() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData)
+          'Content-Length': Buffer.byteLength(postData),
+          'Authorization': `Basic ${auth}`
         }
       };
       
