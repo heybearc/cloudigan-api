@@ -127,7 +127,16 @@ async function getNewToken() {
         
         res.on('end', () => {
           console.log('Token response status:', res.statusCode);
+          console.log('Token response headers:', JSON.stringify(res.headers));
           console.log('Token response (first 200 chars):', data.substring(0, 200));
+          
+          // Handle redirects
+          if (res.statusCode === 302 || res.statusCode === 301) {
+            console.error('Token endpoint returned redirect to:', res.headers.location);
+            console.error('This usually means the authorization code was invalid or already used');
+            reject(new Error(`Token exchange failed with redirect: ${res.statusCode} to ${res.headers.location}`));
+            return;
+          }
           
           if (res.statusCode !== 200) {
             console.error('Token exchange failed. Full response:', data.substring(0, 1000));
