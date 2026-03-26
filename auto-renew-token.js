@@ -7,32 +7,31 @@
 require('dotenv').config();
 const fs = require('fs').promises;
 const path = require('path');
-const nodemailer = require('nodemailer');
+const M365OAuthMailer = require('./m365-oauth-mailer');
 const { refreshToken, getNewToken } = require('./datto-auth');
 const { updateTokenRefreshStatus } = require('./lib/metrics');
 
 const TOKEN_FILE = path.join(__dirname, '.datto-token.json');
+
+// Initialize M365 mailer
+const mailer = new M365OAuthMailer({
+  clientId: process.env.M365_CLIENT_ID,
+  tenantId: process.env.M365_TENANT_ID,
+  clientSecret: process.env.M365_CLIENT_SECRET,
+  fromEmail: process.env.M365_FROM_EMAIL || 'noreply@cloudigan.com',
+  fromName: 'Cloudigan API Monitor'
+});
 
 /**
  * Send alert email
  */
 async function sendAlert(subject, message, isSuccess) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.M365_SMTP_HOST,
-      port: parseInt(process.env.M365_SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.M365_SMTP_USER,
-        pass: process.env.M365_SMTP_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.M365_SMTP_USER,
+    await mailer.sendMail({
       to: process.env.ALERT_EMAIL || 'cory@cloudigan.com',
       subject: subject,
       text: message,
+      html: `<pre style="font-family: monospace; white-space: pre-wrap;">${message}</pre>`
     });
 
     console.log(`[Auto-Renew] Alert sent: ${subject}`);
