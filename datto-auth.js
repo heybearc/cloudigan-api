@@ -32,11 +32,11 @@ async function getNewToken() {
   
   try {
     // Build OAuth authorization URL
+    // Note: Omitting scope parameter due to Datto bug that returns 'dafault' instead of 'default'
     const authParams = new URLSearchParams({
       client_id: DATTO_CONFIG.clientId,
       redirect_uri: DATTO_CONFIG.redirectUri,
       response_type: 'code',
-      scope: 'default',
     });
     
     const authUrl = `${DATTO_CONFIG.authUrl}?${authParams.toString()}`;
