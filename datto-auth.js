@@ -7,6 +7,7 @@ require('dotenv').config();
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
+const https = require('https');
 
 const TOKEN_FILE = path.join(__dirname, '.datto-token.json');
 
@@ -100,35 +101,58 @@ async function getNewToken() {
       client_id: DATTO_CONFIG.clientId,
     });
     
-    // Datto requires Basic Auth for token endpoint
+    // Exchange authorization code for token using https module
     const auth = Buffer.from(`${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
+    const postData = tokenParams.toString();
     
-    const tokenResponse = await fetch(DATTO_CONFIG.tokenUrl, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${auth}`
-      },
-      body: tokenParams.toString(),
+    const tokenData = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'vidal-api.centrastage.net',
+        port: 443,
+        path: '/auth/oauth/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData),
+          'Authorization': `Basic ${auth}`
+        }
+      };
+      
+      const req = https.request(options, (res) => {
+        let data = '';
+        
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        
+        res.on('end', () => {
+          console.log('Token response status:', res.statusCode);
+          console.log('Token response (first 200 chars):', data.substring(0, 200));
+          
+          if (res.statusCode !== 200) {
+            console.error('Token exchange failed. Full response:', data.substring(0, 1000));
+            reject(new Error(`Token exchange failed: ${res.statusCode} - ${data.substring(0, 200)}`));
+            return;
+          }
+          
+          try {
+            const json = JSON.parse(data);
+            resolve(json);
+          } catch (parseError) {
+            console.error('Failed to parse token response as JSON');
+            console.error('Response:', data.substring(0, 500));
+            reject(new Error(`Invalid JSON response: ${data.substring(0, 200)}`));
+          }
+        });
+      });
+      
+      req.on('error', (error) => {
+        reject(new Error(`Token request error: ${error.message}`));
+      });
+      
+      req.write(postData);
+      req.end();
     });
-    
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('Token exchange error response:', errorText.substring(0, 500));
-      throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorText.substring(0, 200)}`);
-    }
-    
-    const responseText = await tokenResponse.text();
-    console.log('Token response (first 200 chars):', responseText.substring(0, 200));
-    
-    let tokenData;
-    try {
-      tokenData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse token response as JSON');
-      console.error('Response:', responseText.substring(0, 500));
-      throw new Error(`Invalid JSON response from token endpoint: ${responseText.substring(0, 200)}`);
-    }
     
     // Save token with metadata
     const tokenInfo = {
