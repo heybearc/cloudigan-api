@@ -113,10 +113,22 @@ async function getNewToken() {
     });
     
     if (!tokenResponse.ok) {
-      throw new Error(`Token exchange failed: ${tokenResponse.status}`);
+      const errorText = await tokenResponse.text();
+      console.error('Token exchange error response:', errorText.substring(0, 500));
+      throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorText.substring(0, 200)}`);
     }
     
-    const tokenData = await tokenResponse.json();
+    const responseText = await tokenResponse.text();
+    console.log('Token response (first 200 chars):', responseText.substring(0, 200));
+    
+    let tokenData;
+    try {
+      tokenData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse token response as JSON');
+      console.error('Response:', responseText.substring(0, 500));
+      throw new Error(`Invalid JSON response from token endpoint: ${responseText.substring(0, 200)}`);
+    }
     
     // Save token with metadata
     const tokenInfo = {
