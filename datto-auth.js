@@ -102,7 +102,7 @@ async function getNewToken() {
     });
     
     // Exchange authorization code for token using https module
-    const auth = Buffer.from(`${DATTO_CONFIG.apiKey}:${DATTO_CONFIG.apiSecretKey}`).toString('base64');
+    // Note: Using public-client which doesn't require authentication
     const postData = tokenParams.toString();
     
     const tokenData = await new Promise((resolve, reject) => {
@@ -113,8 +113,7 @@ async function getNewToken() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData),
-          'Authorization': `Basic ${auth}`
+          'Content-Length': Buffer.byteLength(postData)
         }
       };
       
