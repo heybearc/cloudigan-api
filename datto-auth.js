@@ -52,35 +52,34 @@ async function getNewToken() {
     await page.fill('input[name="username"]', DATTO_CONFIG.apiKey);
     await page.fill('input[name="password"]', DATTO_CONFIG.apiSecretKey);
     
-    // Submit form and wait for redirect
+    // Submit form and intercept redirect to capture auth code before Postman consumes it
     console.log('✅ Submitting login...');
-    await page.click('button[type="submit"]');
     
-    // Wait for redirect with minimal delay to avoid code expiration
-    await page.waitForTimeout(1000);
+    // Set up navigation listener to capture the redirect URL
+    let authCode = null;
+    const navigationPromise = new Promise((resolve) => {
+      page.on('framenavigated', (frame) => {
+        if (frame === page.mainFrame()) {
+          const url = frame.url();
+          if (url.includes('oauth.pstmn.io') && url.includes('code=')) {
+            const urlParams = new URLSearchParams(new URL(url).search);
+            authCode = urlParams.get('code');
+            console.log('🎟️  Authorization code intercepted:', authCode.substring(0, 10) + '...');
+            resolve(authCode);
+          }
+        }
+      });
+    });
     
-    // Check current URL
-    let currentUrl = page.url();
-    console.log('📍 Current URL after submit:', currentUrl);
+    // Click submit and wait for navigation
+    await Promise.all([
+      navigationPromise,
+      page.click('button[type="submit"]')
+    ]);
     
-    // Check if we're already at the callback URL
-    if (currentUrl.includes('oauth.pstmn.io') && currentUrl.includes('code=')) {
-      console.log('✅ Already at callback URL');
-    } else if (currentUrl.includes('error')) {
-      // Check for error in URL
-      const urlObj = new URL(currentUrl);
-      const error = urlObj.searchParams.get('error');
-      const errorDesc = urlObj.searchParams.get('error_description');
-      throw new Error(`OAuth error: ${error} - ${errorDesc}`);
-    } else {
-      // Wait for redirect to callback URL with authorization code
-      console.log('⏳ Waiting for redirect to callback URL...');
-      await page.waitForURL(/oauth\.pstmn\.io.*code=/, { timeout: 60000 });
-      currentUrl = page.url();
-    }
-    
-    const urlParams = new URLSearchParams(new URL(currentUrl).search);
-    const authCode = urlParams.get('code');
+    // Stop navigation immediately to prevent Postman from consuming the code
+    await page.evaluate(() => window.stop());
+    console.log('🛑 Stopped page navigation to preserve authorization code');
     
     if (!authCode) {
       throw new Error('No authorization code received');
