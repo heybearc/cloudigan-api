@@ -50,9 +50,7 @@ async function processSignup(customerData) {
       companyName: customerData.companyName || '',
       isBusinessProduct: customerData.isBusinessProduct || false,
       deviceQuantity: customerData.deviceQuantity || 1,
-      windowsDownloadLink: downloadLinks.windows,
-      macOsDownloadLink: downloadLinks.mac,
-      linuxDownloadLink: downloadLinks.linux,
+      downloadLinks: downloadLinks,
     });
     
     console.log('✅ Welcome email sent!');
