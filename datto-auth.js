@@ -56,16 +56,12 @@ async function getNewToken() {
     console.log('✅ Submitting login...');
     await page.click('button[type="submit"]');
     
-    // Wait a moment for the page to start loading
-    await page.waitForTimeout(2000);
+    // Wait for redirect with minimal delay to avoid code expiration
+    await page.waitForTimeout(1000);
     
-    // Check current URL and page content for debugging
+    // Check current URL
     let currentUrl = page.url();
     console.log('📍 Current URL after submit:', currentUrl);
-    
-    // Take screenshot for debugging
-    await page.screenshot({ path: '/tmp/playwright-debug.png' });
-    console.log('📸 Screenshot saved to /tmp/playwright-debug.png');
     
     // Check if we're already at the callback URL
     if (currentUrl.includes('oauth.pstmn.io') && currentUrl.includes('code=')) {
@@ -94,11 +90,15 @@ async function getNewToken() {
     
     // Exchange code for token
     console.log('🔄 Exchanging code for access token...');
+    // Close browser immediately to avoid any interference
+    await browser.close();
+    
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       code: authCode,
       redirect_uri: DATTO_CONFIG.redirectUri,
       client_id: DATTO_CONFIG.clientId,
+      client_secret: DATTO_CONFIG.apiSecretKey, // Required even for public-client
     });
     
     // Exchange authorization code for token using https module
