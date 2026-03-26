@@ -15,8 +15,8 @@ async function processSignup(customerData) {
   try {
     // 1. Create Datto RMM site
     console.log('\n📡 Creating Datto RMM site...');
-    const siteResponse = await makeAuthenticatedRequest('/api/v2/account/sites', {
-      method: 'POST',
+    const siteResponse = await makeAuthenticatedRequest('/api/v2/site', {
+      method: 'PUT',
       body: JSON.stringify({
         name: customerData.customerName,
         description: `Cloudigan customer - ${customerData.customerEmail}`,
