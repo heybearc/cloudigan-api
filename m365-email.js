@@ -125,11 +125,16 @@ function getBusinessEmailTemplate(data) {
                 </tr>
               </table>
               
-              <h2 style="margin: 30px 0 15px 0; padding: 0 0 8px 0; font-size: 20px; color: #1e3a8a; border-bottom: 3px solid #3b82f6;">Need to adjust your device count?</h2>
-              
-              <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">If you need to add or remove devices, you can manage your subscription in your Stripe customer portal.</p>
-              
-              <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">Or just let us know—we're happy to help you make the right adjustments.</p>
+              <!-- Customer Portal Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                <tr>
+                  <td align="center" style="padding: 25px; background-color: #f8fafc; border: 2px solid #cbd5e1; border-radius: 8px;">
+                    <p style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700; color: #1e3a8a;">Manage Your Subscription</p>
+                    <p style="margin: 0 0 20px 0; font-size: 14px; color: #475569;">Update payment details, adjust device count, or view billing history</p>
+                    <a href="https://pay.cloudigan.com/p/login/eVq4gz6nrgSW1Kh6e9gnK00" style="display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Access Customer Portal</a>
+                  </td>
+                </tr>
+              </table>
               
               <h2 style="margin: 30px 0 15px 0; padding: 0 0 8px 0; font-size: 20px; color: #1e3a8a; border-bottom: 3px solid #3b82f6;">What happens next</h2>
               
@@ -282,6 +287,17 @@ function getHomeProtectEmailTemplate(data) {
                   <td valign="top" style="padding-left: 15px;">
                     <p style="margin: 0 0 10px 0; font-size: 17px; font-weight: 700; color: #1e3a8a;">That's it—you're covered</p>
                     <p style="margin: 0; font-size: 15px; color: #2c3e50;">After installation, everything runs quietly in the background. If something needs your attention, we'll send you a simple email with next steps.</p>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Customer Portal Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                <tr>
+                  <td align="center" style="padding: 25px; background-color: #f8fafc; border: 2px solid #cbd5e1; border-radius: 8px;">
+                    <p style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700; color: #1e3a8a;">Manage Your Subscription</p>
+                    <p style="margin: 0 0 20px 0; font-size: 14px; color: #475569;">Update payment details, change your plan, or view billing history</p>
+                    <a href="https://pay.cloudigan.com/p/login/eVq4gz6nrgSW1Kh6e9gnK00" style="display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Access Customer Portal</a>
                   </td>
                 </tr>
               </table>
