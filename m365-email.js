@@ -425,6 +425,155 @@ Thanks again for trusting Cloudigan.
   }
 }
 
+/**
+ * Send purchase notification to admin
+ */
+async function sendPurchaseNotification(data) {
+  const m365Mailer = getMailer();
+  if (!m365Mailer) {
+    throw new Error('M365 mailer not configured');
+  }
+
+  const productType = data.isBusinessProduct ? 'Business Protect' : 'Home Protect';
+  const amount = (data.amountTotal / 100).toFixed(2);
+  const currency = data.currency.toUpperCase();
+
+  const subject = `🎉 New Purchase: ${productType} - ${data.customerName}`;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 30px; text-align: center; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+              <h1 style="margin: 0; color: white; font-size: 24px;">🎉 New Purchase!</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 30px; background-color: #ffffff;">
+              
+              <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">Purchase Details</h2>
+              
+              <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;"><strong>Product:</strong></td>
+                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">${productType}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; background-color: #ffffff; border-bottom: 1px solid #e5e7eb;"><strong>Customer:</strong></td>
+                  <td style="padding: 8px; background-color: #ffffff; border-bottom: 1px solid #e5e7eb;">${data.customerName}</td>
+                </tr>
+                ${data.companyName ? `
+                <tr>
+                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;"><strong>Company:</strong></td>
+                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">${data.companyName}</td>
+                </tr>
+                ` : ''}
+                <tr>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;">${data.customerEmail}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #e5e7eb;"><strong>Devices:</strong></td>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #e5e7eb;">${data.deviceQuantity}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;"><strong>Amount:</strong></td>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb; color: #059669; font-weight: bold; font-size: 18px;">${currency} $${amount}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #e5e7eb;"><strong>Datto Site UID:</strong></td>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${data.siteUid}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'};"><strong>Stripe Session:</strong></td>
+                  <td style="padding: 8px; background-color: ${data.companyName ? '#ffffff' : '#f9fafb'}; font-family: monospace; font-size: 12px;">${data.sessionId}</td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 20px; padding: 15px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+                <p style="margin: 0; color: #065f46; font-size: 14px;">
+                  ✅ <strong>Automated Actions Completed:</strong><br>
+                  • Datto RMM site created<br>
+                  • Download links generated<br>
+                  • Welcome email sent to customer<br>
+                  • Wix CMS record created
+                </p>
+              </div>
+
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px; text-align: center; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                Cloudigan API - Automated Purchase Notification<br>
+                Server: cloudigan-api-blue (CT181)
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const textContent = `
+🎉 NEW PURCHASE NOTIFICATION
+
+Product: ${productType}
+Customer: ${data.customerName}
+${data.companyName ? `Company: ${data.companyName}\n` : ''}Email: ${data.customerEmail}
+Devices: ${data.deviceQuantity}
+Amount: ${currency} $${amount}
+
+Datto Site UID: ${data.siteUid}
+Stripe Session: ${data.sessionId}
+
+✅ AUTOMATED ACTIONS COMPLETED:
+• Datto RMM site created
+• Download links generated
+• Welcome email sent to customer
+• Wix CMS record created
+
+---
+Cloudigan API - Automated Purchase Notification
+Server: cloudigan-api-blue (CT181)
+  `;
+
+  try {
+    await m365Mailer.sendMail({
+      to: process.env.ALERT_EMAIL || 'cory@cloudigan.com',
+      subject: subject,
+      html: htmlContent,
+      text: textContent
+    });
+    
+    console.log('Purchase notification sent to:', process.env.ALERT_EMAIL);
+    return true;
+  } catch (error) {
+    console.error('Purchase notification failed:', error.message);
+    throw new Error(`Failed to send purchase notification: ${error.message}`);
+  }
+}
+
 module.exports = {
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendPurchaseNotification
 };

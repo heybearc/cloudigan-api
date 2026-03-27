@@ -30,7 +30,7 @@ const { getAlerter } = require('./lib/alerting');
 const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
-const { sendWelcomeEmail } = require('./m365-email');
+const { sendWelcomeEmail, sendPurchaseNotification } = require('./m365-email');
 const { startTokenMonitoring } = require('./lib/token-monitor');
 const path = require('path');
 
@@ -331,6 +331,26 @@ app.post('/webhook/stripe',
             }
           } else {
             requestLogger.info('M365 email not configured - skipping email');
+          }
+
+          // Send purchase notification to admin
+          if (process.env.M365_CLIENT_ID && process.env.ALERT_EMAIL) {
+            try {
+              await sendPurchaseNotification({
+                customerEmail: customerData.email,
+                customerName: customerData.customerName,
+                companyName: customerData.companyName,
+                isBusinessProduct: customerData.isBusinessProduct,
+                deviceQuantity: customerData.deviceQuantity,
+                siteUid: dattoSite.uid,
+                sessionId: session.id,
+                amountTotal: session.amount_total,
+                currency: session.currency
+              });
+              requestLogger.info('Purchase notification sent to admin', { email: customerData.email });
+            } catch (error) {
+              requestLogger.warn('Purchase notification failed (non-critical)', { error: error.message });
+            }
           }
 
           // Download links are stored in:
