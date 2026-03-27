@@ -233,23 +233,34 @@ app.post('/webhook/stripe',
           // Stripe checkout session includes line_items in expanded data
           const deviceQuantity = session.line_items?.data?.[0]?.quantity || session.metadata?.quantity || 1;
           
+          // Determine product type from Stripe line items
+          // Fetch full session with expanded line items to get product details
+          const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ['line_items', 'line_items.data.price.product']
+          });
+          
+          const productName = fullSession.line_items?.data?.[0]?.price?.product?.name || '';
+          const isBusinessProduct = productName.toLowerCase().includes('business') || 
+                                   productName.toLowerCase().includes('complete package');
+          
           // Log extracted data for debugging
           requestLogger.info('Extracted customer data', { 
             companyName,
             customerName,
-            hasCompanyName: !!companyName,
+            productName,
+            isBusinessProduct,
             deviceQuantity
           });
           
           const customerData = {
             email: session.customer_details.email,
-            companyName: companyName,
+            companyName: companyName || (isBusinessProduct ? customerName : ''),
             customerName: customerName,
             displayName: companyName || customerName, // Use company name if available, otherwise customer name
             subscriptionId: session.subscription,
             customerId: session.customer,
             productId: session.metadata?.product_id,
-            isBusinessProduct: !!companyName, // Flag to identify business vs personal
+            isBusinessProduct: isBusinessProduct, // Determined from actual Stripe product
             deviceQuantity: deviceQuantity
           };
 
