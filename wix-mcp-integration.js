@@ -29,6 +29,7 @@ async function insertCustomerDownload(data) {
     customerEmail: data.customerEmail,
     customerName: data.customerName || data.customerEmail,
     companyName: data.companyName || '',
+    businessLocation: data.businessLocation || '',
     isBusinessProduct: data.isBusinessProduct || false,
     windowsDownloadLink: data.downloadLinks.windows,
     macOsDownloadLink: data.downloadLinks.mac,

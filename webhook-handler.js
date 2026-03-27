@@ -223,10 +223,13 @@ app.post('/webhook/stripe',
           // For business products: use custom_fields company name
           // For personal products: use customer_details.name
           
-          // Extract company name from Stripe custom fields
-          // Field key is 'companyname' (lowercase, no underscore)
-          const companyNameField = session.custom_fields?.find(f => f.key === 'companyname');
-          const companyName = companyNameField?.text?.value || session.metadata?.company_name;
+          // Extract business name and location from Stripe custom fields
+          // Field keys: 'businessname' and 'businesslocation' (Stripe converts to lowercase, no spaces)
+          const businessNameField = session.custom_fields?.find(f => f.key === 'businessname');
+          const businessLocationField = session.custom_fields?.find(f => f.key === 'businesslocation');
+          
+          const companyName = businessNameField?.text?.value || session.metadata?.company_name;
+          const businessLocation = businessLocationField?.text?.value || '';
           const customerName = session.customer_details.name;
           
           // Extract device quantity from line items (if available)
@@ -246,6 +249,7 @@ app.post('/webhook/stripe',
           // Log extracted data for debugging
           requestLogger.info('Extracted customer data', { 
             companyName,
+            businessLocation,
             customerName,
             productName,
             isBusinessProduct,
@@ -255,6 +259,7 @@ app.post('/webhook/stripe',
           const customerData = {
             email: session.customer_details.email,
             companyName: companyName || (isBusinessProduct ? customerName : ''),
+            businessLocation: businessLocation,
             customerName: customerName,
             displayName: companyName || customerName, // Use company name if available, otherwise customer name
             subscriptionId: session.subscription,
@@ -306,6 +311,7 @@ app.post('/webhook/stripe',
                 customerEmail: customerData.email,
                 customerName: customerData.displayName || customerData.email,
                 companyName: customerData.companyName,
+                businessLocation: customerData.businessLocation,
                 isBusinessProduct: customerData.isBusinessProduct,
                 downloadLinks
               });
