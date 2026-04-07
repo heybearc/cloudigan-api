@@ -1,22 +1,22 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-03-16
+**Last updated:** 2026-04-07
 
 ## Current Task
-**Stripe to Datto RMM Integration** - COMPLETE ✅
+**Production Operations & Monitoring** - ACTIVE
 
-### What was accomplished
-Built complete automated integration for Stripe subscriptions to create Datto RMM sites with agent download links. Ready for deployment to homelab via nexus repository.
+### What I'm doing right now
+Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). System is processing customer purchases successfully. Recent work focused on fixing expired Datto token, implementing automated refresh, and fixing alerting system.
 
 ### Recent completions
-- ✅ Resolved Datto RMM API authentication (OAuth 2.0 with Playwright automation)
-- ✅ Built webhook handler for Stripe checkout events
-- ✅ Implemented automated OAuth token refresh (100-hour tokens)
-- ✅ Tested site creation via Datto API
-- ✅ Created LXC container architecture for homelab deployment
-- ✅ Documented complete control plane governance
-- ✅ Created nexus repository handoff documentation
-- ✅ Aligned with LDC Tools governance model (repo-governed, container-first)
+- ✅ Fixed expired Datto OAuth token (April 1, 2026)
+- ✅ Implemented automated token refresh cron jobs (every 3 days, staggered)
+- ✅ Fixed token-monitor.js mailer initialization bug (alerts were failing silently)
+- ✅ Deployed fixes to both BLUE and GREEN containers
+- ✅ Manually processed failed webhook customer (Patrick Frost - Cleveland Wrap)
+- ✅ Corrected Wix CMS data for Business Essentials Package purchase
+- ✅ Verified Wix CMS has 4 recent customers with complete data
+- ✅ Cleaned up Zammad-related files (moved to homelab-nexus via control plane)
 
 ### Integration Flow (Working)
 ```
@@ -35,30 +35,28 @@ Wix confirmation page displays download link
 
 ## Next Steps
 
-### Immediate (Nexus Repo Team)
-1. **Copy files to nexus repository**
-   - Source code → `/applications/stripe-datto-webhook/src/`
-   - Config → `/applications/stripe-datto-webhook/config/`
-   - Docs → `/applications/stripe-datto-webhook/docs/`
-   - Use `NEXUS-HANDOFF.md` as deployment guide
+### Immediate
+1. **Monitor automated token refresh**
+   - BLUE cron: Midnight every 3 days
+   - GREEN cron: 6 AM every 3 days
+   - Verify email alerts are received on next refresh
+   - Check `/var/log/datto-token-refresh.log` after first run
 
-2. **Create LXC container**
-   - Function: utility
-   - IP: Assign from utility range
-   - Resources: 2 CPU, 1GB RAM, 5GB disk
-   - Follow `HOMELAB-ARCHITECTURE.md`
+2. **Verify alerting system**
+   - Token monitoring runs hourly via webhook-handler.js
+   - Alerts sent to cory@cloudigan.com when < 24 hours remaining
+   - M365OAuthMailer properly initialized in token-monitor.js
 
-3. **Deploy to STANDBY first**
-   - Test OAuth automation
-   - Test Stripe webhook with test mode
-   - Verify Datto site creation
-   - Switch to LIVE after validation
+3. **Monitor production webhooks**
+   - Watch for any Datto API errors
+   - Verify customer data flows to Wix CMS correctly
+   - Check that Business vs Personal products are classified correctly
 
-### After Deployment
-1. Configure Stripe webhook endpoint (https://api.cloudigan.net/webhook/stripe)
-2. Update Wix confirmation page with API endpoint
-3. Test with real subscription
-4. Monitor for 24 hours
+### Operational Maintenance
+1. Token refresh happens automatically every 3 days
+2. Health checks via HAProxy on both containers
+3. Metrics available at `/metrics` endpoint
+4. Logs via `journalctl -u cloudigan-api`
 
 ## Files Ready for Handoff
 
@@ -102,35 +100,46 @@ Wix confirmation page displays download link
 3. **Wix**: Confirmation page fetches agent download URL
 
 ## Known Issues
-None - integration is complete and tested.
+None - system is operational and stable.
+
+**Recent Issues Resolved:**
+- ✅ Datto OAuth token expired (10 days old) - Fixed April 1, 2026
+- ✅ Token monitoring alerts not sending - Fixed mailer initialization
+- ✅ No automated token refresh - Implemented cron jobs on both containers
 
 ## Exact Next Command
-**For nexus repo team:**
+**Monitor the system:**
 ```bash
-# Copy files to nexus repo
-cp -r /Users/cory/Projects/cloudigan/projects/stripe-datto-integration/* \
-  /path/to/nexus/applications/stripe-datto-webhook/
+# Check token status on LIVE container
+ssh root@10.92.3.181 'cd /opt/cloudigan-api && node -e "const t = require(\"./.datto-token.json\"); console.log(\"Expires:\", new Date(t.expires_at), \"Hours remaining:\", Math.round((t.expires_at - Date.now()) / 3600000))"'
 
-# Follow NEXUS-HANDOFF.md for deployment
+# Check recent Wix CMS customers
+ssh root@10.92.3.181 'cd /opt/cloudigan-api && node query-wix-cms.js | head -20'
+
+# Verify cron jobs are scheduled
+ssh root@10.92.3.181 'crontab -l | grep auto-renew-token'
 ```
 
 ## Success Criteria
 - [x] Datto API authentication working
 - [x] Site creation tested and confirmed
-- [x] OAuth token auto-refresh implemented
+- [x] OAuth token auto-refresh implemented (cron jobs on both containers)
 - [x] Webhook handler complete
 - [x] LXC architecture documented
 - [x] Control plane governance created
-- [x] Nexus handoff guide complete
-- [ ] Deployed to homelab (nexus team)
-- [ ] Stripe webhook configured
-- [ ] Wix page updated
-- [ ] End-to-end test with real customer
+- [x] Deployed to homelab (CT181 BLUE - LIVE, CT182 GREEN - STANDBY)
+- [x] Stripe webhook configured and processing payments
+- [x] Wix CMS integration working
+- [x] End-to-end test with real customers (4 customers processed successfully)
+- [x] Token monitoring and alerting system operational
+- [x] Blue-green deployment pattern implemented
 
 ## Notes
-- This integration is **production-ready**
-- All code tested locally
-- OAuth automation works perfectly
-- Follows homelab governance model
-- Ready for nexus repo deployment
-- Estimated deployment time: 1-2 hours (nexus team)
+- **System is LIVE and processing customer purchases**
+- Deployed on containers CT181 (BLUE - LIVE) and CT182 (GREEN - STANDBY)
+- HAProxy routing traffic to BLUE container
+- Automated token refresh every 3 days (staggered: BLUE midnight, GREEN 6 AM)
+- Email alerts configured for token expiration and refresh events
+- 4 customers successfully processed in Wix CMS
+- Manual processing capability tested (Patrick Frost - Cleveland Wrap)
+- Zammad work moved to homelab-nexus via control plane governance
