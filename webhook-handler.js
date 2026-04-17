@@ -243,8 +243,21 @@ app.post('/webhook/stripe',
           });
           
           const productName = fullSession.line_items?.data?.[0]?.price?.product?.name || '';
-          const isBusinessProduct = productName.toLowerCase().includes('business') || 
-                                   productName.toLowerCase().includes('complete package');
+          const productNameLower = productName.toLowerCase();
+          
+          // Determine if this is a business product
+          const isBusinessProduct = productNameLower.includes('business') || 
+                                   productNameLower.includes('complete package') ||
+                                   productNameLower.includes('essentials');
+          
+          // Determine product category:
+          // - RMM products: Home Protect, Business packages, Management packages (need Datto site)
+          // - Service products: Technical Support hours only (no Datto site needed)
+          const isStandaloneService = productNameLower.includes('technical support') ||
+                                     productNameLower.includes('support hour') ||
+                                     productNameLower.includes('consulting hour');
+          
+          const isRmmProduct = !isStandaloneService; // Everything else is an RMM product
           
           // Log extracted data for debugging
           requestLogger.info('Extracted customer data', { 
@@ -253,6 +266,8 @@ app.post('/webhook/stripe',
             customerName,
             productName,
             isBusinessProduct,
+            isRmmProduct,
+            isStandaloneService,
             deviceQuantity
           });
           
@@ -265,7 +280,10 @@ app.post('/webhook/stripe',
             subscriptionId: session.subscription,
             customerId: session.customer,
             productId: session.metadata?.product_id,
+            productName: productName,
             isBusinessProduct: isBusinessProduct, // Determined from actual Stripe product
+            isRmmProduct: isRmmProduct, // Whether this product requires Datto RMM site
+            isStandaloneService: isStandaloneService, // Whether this is a standalone service (no RMM)
             deviceQuantity: deviceQuantity
           };
 
@@ -274,45 +292,62 @@ app.post('/webhook/stripe',
             customerId: customerData.customerId,
             displayName: customerData.displayName,
             isBusinessProduct: customerData.isBusinessProduct,
+            isRmmProduct: customerData.isRmmProduct,
+            isStandaloneService: customerData.isStandaloneService,
+            productName: customerData.productName,
             companyName: customerData.companyName
           });
 
-          // Create site in Datto RMM
-          const dattoStartTime = Date.now();
-          const dattoSite = await createDattoSite(customerData, requestLogger);
-          const dattoDuration = (Date.now() - dattoStartTime) / 1000;
+          // Only create Datto RMM site for RMM products
+          // Skip for standalone service products (technical support hours)
+          let dattoSite = null;
+          let downloadLinks = null;
           
-          recordSignupFlowStage('datto_site_creation', 'success', customerData.isBusinessProduct ? 'business' : 'personal', dattoDuration);
-          
-          requestLogger.info('Datto site created', {
-            siteUid: dattoSite.uid,
-            email: customerData.email
-          });
+          if (customerData.isRmmProduct) {
+            // Create site in Datto RMM
+            const dattoStartTime = Date.now();
+            dattoSite = await createDattoSite(customerData, requestLogger);
+            const dattoDuration = (Date.now() - dattoStartTime) / 1000;
+            
+            recordSignupFlowStage('datto_site_creation', 'success', customerData.isBusinessProduct ? 'business' : 'personal', dattoDuration);
+            
+            requestLogger.info('Datto site created', {
+              siteUid: dattoSite.uid,
+              email: customerData.email
+            });
 
-          // Generate all platform download links
-          const downloadLinks = generateDownloadLinks(dattoSite.id, dattoSite.uid);
-          
-          requestLogger.info('Download links generated', {
-            siteUid: dattoSite.uid,
-            siteId: dattoSite.id,
-            windows: downloadLinks.windows,
-            mac: downloadLinks.mac,
-            linux: downloadLinks.linux
-          });
+            // Generate all platform download links
+            downloadLinks = generateDownloadLinks(dattoSite.id, dattoSite.uid);
+            
+            requestLogger.info('Download links generated', {
+              siteUid: dattoSite.uid,
+              siteId: dattoSite.id,
+              windows: downloadLinks.windows,
+              mac: downloadLinks.mac,
+              linux: downloadLinks.linux
+            });
+          } else {
+            requestLogger.info('Standalone service product - skipping Datto site creation', {
+              productName: customerData.productName,
+              email: customerData.email
+            });
+            recordSignupFlowStage('datto_site_creation', 'skipped', 'service_product');
+          }
 
-          // Insert into Wix CMS (if configured)
-          if (process.env.WIX_API_KEY && process.env.WIX_SITE_ID) {
+          // Insert into Wix CMS (if configured) - only for RMM products
+          if (customerData.isRmmProduct && process.env.WIX_API_KEY && process.env.WIX_SITE_ID) {
             try {
               const wixStartTime = Date.now();
               const { insertCustomerDownload } = require('./wix-mcp-integration');
               await insertCustomerDownload({
                 sessionId: session.id,
-                siteUid: dattoSite.uid,
+                siteUid: dattoSite?.uid,
                 customerEmail: customerData.email,
                 customerName: customerData.displayName || customerData.email,
                 companyName: customerData.companyName,
                 businessLocation: customerData.businessLocation,
                 isBusinessProduct: customerData.isBusinessProduct,
+                productName: customerData.productName,
                 downloadLinks
               });
               const wixDuration = (Date.now() - wixStartTime) / 1000;
@@ -322,28 +357,45 @@ app.post('/webhook/stripe',
               recordSignupFlowStage('wix_cms_write', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
               requestLogger.warn('Wix CMS insert failed (non-critical)', { error: error.message });
             }
+          } else if (customerData.isStandaloneService) {
+            requestLogger.info('Standalone service product - skipping Wix CMS (no RMM site)', {
+              productName: customerData.productName
+            });
           } else {
             requestLogger.info('Wix CMS not configured - skipping');
           }
 
-          // Send welcome email (if configured)
+          // Send appropriate email based on product type
           if (process.env.M365_CLIENT_ID) {
             try {
               const emailStartTime = Date.now();
-              await sendWelcomeEmail({
-                customerEmail: customerData.email,
-                customerName: customerData.customerName,
-                companyName: customerData.companyName,
-                isBusinessProduct: customerData.isBusinessProduct,
-                downloadLinks,
-                siteUid: dattoSite.uid,
-                deviceQuantity: customerData.deviceQuantity
-              });
+              
+              if (customerData.isRmmProduct) {
+                // Send welcome email with download links for RMM products
+                await sendWelcomeEmail({
+                  customerEmail: customerData.email,
+                  customerName: customerData.customerName,
+                  companyName: customerData.companyName,
+                  isBusinessProduct: customerData.isBusinessProduct,
+                  downloadLinks,
+                  siteUid: dattoSite?.uid,
+                  deviceQuantity: customerData.deviceQuantity
+                });
+                requestLogger.info('Welcome email sent (RMM product)', { email: customerData.email });
+              } else {
+                // Send service confirmation email for standalone service products
+                // TODO: Create sendServiceConfirmationEmail function
+                requestLogger.info('Service product - skipping RMM welcome email', {
+                  productName: customerData.productName,
+                  email: customerData.email
+                });
+                // For now, just log - you may want to send a different confirmation email
+              }
+              
               const emailDuration = (Date.now() - emailStartTime) / 1000;
-              recordSignupFlowStage('welcome_email', 'success', customerData.isBusinessProduct ? 'business' : 'personal', emailDuration);
-              requestLogger.info('Welcome email sent', { email: customerData.email });
+              recordSignupFlowStage('welcome_email', 'success', customerData.isRmmProduct ? 'rmm' : 'service', emailDuration);
             } catch (error) {
-              recordSignupFlowStage('welcome_email', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
+              recordSignupFlowStage('welcome_email', 'failed', customerData.isRmmProduct ? 'rmm' : 'service');
               requestLogger.warn('Email send failed (non-critical)', { error: error.message });
             }
           } else {
