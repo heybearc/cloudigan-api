@@ -1,62 +1,70 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-04-07
+**Last updated:** 2026-04-18
 
 ## Current Task
-**Production Operations & Monitoring** - ACTIVE
+**Production Operations & Product Type Handling** - ACTIVE
 
 ### What I'm doing right now
-Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). System is processing customer purchases successfully. Recent work focused on fixing expired Datto token, implementing automated refresh, and fixing alerting system.
+Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). System is processing customer purchases successfully. Recent work focused on implementing product type detection to handle RMM products vs standalone service products differently.
 
 ### Recent completions
-- ✅ Fixed expired Datto OAuth token (April 1, 2026)
-- ✅ Implemented automated token refresh cron jobs (every 3 days, staggered)
-- ✅ Fixed token-monitor.js mailer initialization bug (alerts were failing silently)
-- ✅ Deployed fixes to both BLUE and GREEN containers
-- ✅ Manually processed failed webhook customer (Patrick Frost - Cleveland Wrap)
-- ✅ Corrected Wix CMS data for Business Essentials Package purchase
-- ✅ Verified Wix CMS has 4 recent customers with complete data
-- ✅ Cleaned up Zammad-related files (moved to homelab-nexus via control plane)
+- ✅ Implemented product type detection (RMM vs standalone service) - April 17, 2026
+- ✅ Dynamic detection based on product name keywords (technical support, support hour, consulting hour)
+- ✅ Modified webhook to skip Datto site creation for service products
+- ✅ Modified webhook to skip welcome email for service products
+- ✅ Service products now skip Wix CMS (no RMM site to track)
+- ✅ Deployed product type detection to both BLUE and GREEN containers
+- ✅ Fixed issue where technical support purchases incorrectly created Datto sites
 
 ### Integration Flow (Working)
 ```
-Customer subscribes on Wix
+Customer purchases on Stripe
     ↓
 Stripe processes payment
     ↓
 Webhook → api.cloudigan.net/webhook/stripe
     ↓
-Creates Datto RMM site (OAuth automated)
+Product Type Detection
     ↓
-Returns portal URL
-    ↓
-Wix confirmation page displays download link
+┌─────────────────────────────────────┬──────────────────────────────────┐
+│ RMM Products                        │ Standalone Service Products      │
+│ (Home Protect, Business, etc.)      │ (Technical Support Hours)        │
+├─────────────────────────────────────┼──────────────────────────────────┤
+│ ✅ Create Datto RMM site            │ ❌ Skip Datto site creation      │
+│ ✅ Generate download links          │ ❌ Skip download links           │
+│ ✅ Send welcome email               │ ❌ Skip welcome email            │
+│ ✅ Insert into Wix CMS              │ ❌ Skip Wix CMS                  │
+│ ✅ Send admin notification          │ ✅ Send admin notification       │
+└─────────────────────────────────────┴──────────────────────────────────┘
 ```
 
 ## Next Steps
 
 ### Immediate
-1. **Monitor automated token refresh**
+1. **Monitor product type detection**
+   - Verify RMM products create Datto sites correctly
+   - Verify service products skip Datto site creation
+   - Check logs for product type classification: `journalctl -u cloudigan-api | grep "Product Type Detection"`
+   - Ensure admin notifications are sent for all purchases
+
+2. **Optional: Create service confirmation email**
+   - Currently service products skip all emails
+   - Consider creating a confirmation email for service purchases
+   - Would confirm purchase and provide next steps for scheduling support
+
+3. **Monitor automated token refresh**
    - BLUE cron: Midnight every 3 days
    - GREEN cron: 6 AM every 3 days
-   - Verify email alerts are received on next refresh
-   - Check `/var/log/datto-token-refresh.log` after first run
-
-2. **Verify alerting system**
-   - Token monitoring runs hourly via webhook-handler.js
-   - Alerts sent to cory@cloudigan.com when < 24 hours remaining
-   - M365OAuthMailer properly initialized in token-monitor.js
-
-3. **Monitor production webhooks**
-   - Watch for any Datto API errors
-   - Verify customer data flows to Wix CMS correctly
-   - Check that Business vs Personal products are classified correctly
+   - Next refresh: ~April 20, 2026
+   - Check `/var/log/datto-token-refresh.log` after refresh
 
 ### Operational Maintenance
 1. Token refresh happens automatically every 3 days
-2. Health checks via HAProxy on both containers
-3. Metrics available at `/metrics` endpoint
-4. Logs via `journalctl -u cloudigan-api`
+2. Product type detection is fully dynamic (keyword-based)
+3. Health checks via HAProxy on both containers
+4. Metrics available at `/metrics` endpoint
+5. Logs via `journalctl -u cloudigan-api`
 
 ## Files Ready for Handoff
 
@@ -81,6 +89,18 @@ Wix confirmation page displays download link
 
 ## Technical Details
 
+### Product Type Detection (New - April 17, 2026)
+- **Detection Method**: Keyword-based analysis of Stripe product names
+- **RMM Products**: All products except those with service keywords
+  - Home Protect, Business Essentials, Complete Package, Management packages
+  - Creates Datto site, sends welcome email, inserts into Wix CMS
+- **Service Products**: Products containing keywords:
+  - "technical support", "support hour", "consulting hour"
+  - Skips Datto site, skips welcome email, skips Wix CMS
+  - Admin notification still sent
+- **Fully Dynamic**: No code changes needed for new products
+- **Logging**: Product type classification logged for all purchases
+
 ### Authentication Solution
 - **Problem**: Datto OAuth requires browser interaction
 - **Solution**: Playwright automation for OAuth flow
@@ -96,8 +116,8 @@ Wix confirmation page displays download link
 
 ### Integration Points
 1. **Stripe**: Webhook for `checkout.session.completed`
-2. **Datto RMM**: Site creation API (vidal-api.centrastage.net)
-3. **Wix**: Confirmation page fetches agent download URL
+2. **Datto RMM**: Site creation API (vidal-api.centrastage.net) - RMM products only
+3. **Wix CMS**: Customer tracking - RMM products only
 
 ## Known Issues
 None - system is operational and stable.
@@ -108,31 +128,34 @@ None - system is operational and stable.
 - ✅ No automated token refresh - Implemented cron jobs on both containers
 
 ## Exact Next Command
-**Monitor the system:**
+**Monitor product type detection and system health:**
 ```bash
+# Check recent webhook logs for product type detection
+ssh root@10.92.3.181 'journalctl -u cloudigan-api --since "1 hour ago" | grep -E "(isRmmProduct|isStandaloneService|Product Type Detection)"'
+
 # Check token status on LIVE container
 ssh root@10.92.3.181 'cd /opt/cloudigan-api && node -e "const t = require(\"./.datto-token.json\"); console.log(\"Expires:\", new Date(t.expires_at), \"Hours remaining:\", Math.round((t.expires_at - Date.now()) / 3600000))"'
 
-# Check recent Wix CMS customers
-ssh root@10.92.3.181 'cd /opt/cloudigan-api && node query-wix-cms.js | head -20'
-
-# Verify cron jobs are scheduled
-ssh root@10.92.3.181 'crontab -l | grep auto-renew-token'
+# Verify both containers are healthy
+ssh root@10.92.3.181 'curl -s http://localhost:3000/health | grep status'
+ssh root@10.92.3.182 'curl -s http://localhost:3000/health | grep status'
 ```
 
 ## Success Criteria
 - [x] Datto API authentication working
 - [x] Site creation tested and confirmed
 - [x] OAuth token auto-refresh implemented (cron jobs on both containers)
-- [x] Webhook handler complete
+- [x] Webhook handler complete with product type detection
 - [x] LXC architecture documented
 - [x] Control plane governance created
 - [x] Deployed to homelab (CT181 BLUE - LIVE, CT182 GREEN - STANDBY)
 - [x] Stripe webhook configured and processing payments
-- [x] Wix CMS integration working
-- [x] End-to-end test with real customers (4 customers processed successfully)
+- [x] Wix CMS integration working (RMM products only)
+- [x] End-to-end test with real customers (4+ customers processed successfully)
 - [x] Token monitoring and alerting system operational
 - [x] Blue-green deployment pattern implemented
+- [x] Product type detection implemented (RMM vs service products)
+- [x] Service products skip Datto site creation correctly
 
 ## Notes
 - **System is LIVE and processing customer purchases**
@@ -140,6 +163,8 @@ ssh root@10.92.3.181 'crontab -l | grep auto-renew-token'
 - HAProxy routing traffic to BLUE container
 - Automated token refresh every 3 days (staggered: BLUE midnight, GREEN 6 AM)
 - Email alerts configured for token expiration and refresh events
-- 4 customers successfully processed in Wix CMS
+- **Product type detection active** - RMM products create Datto sites, service products skip
+- Dynamic detection based on product name keywords (no code changes needed for new products)
+- 4+ customers successfully processed in Wix CMS
 - Manual processing capability tested (Patrick Frost - Cleveland Wrap)
-- Zammad work moved to homelab-nexus via control plane governance
+- Technical support purchases now handled correctly (skip Datto site creation)
