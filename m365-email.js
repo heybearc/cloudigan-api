@@ -450,7 +450,7 @@ async function sendPurchaseNotification(data) {
     throw new Error('M365 mailer not configured');
   }
 
-  const productType = data.isBusinessProduct ? 'Business Protect' : 'Home Protect';
+  const productType = data.productName || (data.isBusinessProduct ? 'Business Protect' : 'Home Protect');
   const amount = (data.amountTotal / 100).toFixed(2);
   const currency = data.currency.toUpperCase();
 
@@ -485,7 +485,7 @@ async function sendPurchaseNotification(data) {
               <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;"><strong>Product:</strong></td>
-                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">${productType}</td>
+                  <td style="padding: 8px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">${productType} (x${data.deviceQuantity})</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px; background-color: #ffffff; border-bottom: 1px solid #e5e7eb;"><strong>Customer:</strong></td>

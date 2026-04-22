@@ -232,17 +232,15 @@ app.post('/webhook/stripe',
           const businessLocation = businessLocationField?.text?.value || '';
           const customerName = session.customer_details.name;
           
-          // Extract device quantity from line items (if available)
-          // Stripe checkout session includes line_items in expanded data
-          const deviceQuantity = session.line_items?.data?.[0]?.quantity || session.metadata?.quantity || 1;
-          
-          // Determine product type from Stripe line items
-          // Fetch full session with expanded line items to get product details
+          // Fetch full session with expanded line items to get product details and quantity
           const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
             expand: ['line_items', 'line_items.data.price.product']
           });
           
           const productName = fullSession.line_items?.data?.[0]?.price?.product?.name || '';
+          
+          // Extract device quantity from expanded line items (quantity on the raw session is not populated)
+          const deviceQuantity = fullSession.line_items?.data?.[0]?.quantity || session.metadata?.quantity || 1;
           const productNameLower = productName.toLowerCase();
           
           // Determine if this is a business product
@@ -377,6 +375,7 @@ app.post('/webhook/stripe',
                   customerName: customerData.customerName,
                   companyName: customerData.companyName,
                   isBusinessProduct: customerData.isBusinessProduct,
+                  productName: customerData.productName,
                   downloadLinks,
                   siteUid: dattoSite?.uid,
                   deviceQuantity: customerData.deviceQuantity
@@ -410,8 +409,9 @@ app.post('/webhook/stripe',
                 customerName: customerData.customerName,
                 companyName: customerData.companyName,
                 isBusinessProduct: customerData.isBusinessProduct,
+                productName: customerData.productName,
                 deviceQuantity: customerData.deviceQuantity,
-                siteUid: dattoSite.uid,
+                siteUid: dattoSite?.uid,
                 sessionId: session.id,
                 amountTotal: session.amount_total,
                 currency: session.currency
