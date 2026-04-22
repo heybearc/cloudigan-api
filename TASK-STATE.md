@@ -1,6 +1,6 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-04-18
+**Last updated:** 2026-04-22
 
 ## Current Task
 **Production Operations & Product Type Handling** - ACTIVE
@@ -9,13 +9,12 @@
 Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). System is processing customer purchases successfully. Recent work focused on implementing product type detection to handle RMM products vs standalone service products differently.
 
 ### Recent completions
-- ✅ Implemented product type detection (RMM vs standalone service) - April 17, 2026
-- ✅ Dynamic detection based on product name keywords (technical support, support hour, consulting hour)
-- ✅ Modified webhook to skip Datto site creation for service products
-- ✅ Modified webhook to skip welcome email for service products
-- ✅ Service products now skip Wix CMS (no RMM site to track)
-- ✅ Deployed product type detection to both BLUE and GREEN containers
-- ✅ Fixed issue where technical support purchases incorrectly created Datto sites
+- ✅ Implemented product type detection (RMM vs standalone service) - April 17
+- ✅ Deployed product type detection to both BLUE and GREEN containers - April 17
+- ✅ Fixed issue where technical support purchases incorrectly created Datto sites - April 17
+- ✅ Promoted D-038 (Product Type Detection Pattern) to control plane - April 18
+- ✅ Governance sync: pulled new patterns (email dark mode, Stripe device qty, Wix multi-state box) - April 18-22
+- ✅ Migrated IMPLEMENTATION-PLAN.md to PLAN.md per D-035 - April 22
 
 ### Integration Flow (Working)
 ```
@@ -42,22 +41,19 @@ Product Type Detection
 ## Next Steps
 
 ### Immediate
-1. **Monitor product type detection**
-   - Verify RMM products create Datto sites correctly
-   - Verify service products skip Datto site creation
-   - Check logs for product type classification: `journalctl -u cloudigan-api | grep "Product Type Detection"`
-   - Ensure admin notifications are sent for all purchases
+1. **Create service confirmation email** (optional, next feature)
+   - Currently service product purchases receive no customer-facing email
+   - Should confirm purchase and provide scheduling/contact instructions
+   - Needs new email template in M365 mailer
 
-2. **Optional: Create service confirmation email**
-   - Currently service products skip all emails
-   - Consider creating a confirmation email for service purchases
-   - Would confirm purchase and provide next steps for scheduling support
+2. **Verify Datto token auto-refresh ran**
+   - Scheduled refresh was ~April 20 on BLUE, ~April 20 6AM on GREEN
+   - Check `/var/log/datto-token-refresh.log` on both containers
+   - Verify email alerts were received
 
-3. **Monitor automated token refresh**
-   - BLUE cron: Midnight every 3 days
-   - GREEN cron: 6 AM every 3 days
-   - Next refresh: ~April 20, 2026
-   - Check `/var/log/datto-token-refresh.log` after refresh
+3. **Monitor production webhooks**
+   - Watch logs for product type detection working correctly
+   - `journalctl -u cloudigan-api | grep -E "isRmmProduct|isStandaloneService"`
 
 ### Operational Maintenance
 1. Token refresh happens automatically every 3 days
@@ -128,18 +124,21 @@ None - system is operational and stable.
 - ✅ No automated token refresh - Implemented cron jobs on both containers
 
 ## Exact Next Command
-**Monitor product type detection and system health:**
+**Check if token auto-refresh ran and containers are healthy:**
 ```bash
-# Check recent webhook logs for product type detection
-ssh root@10.92.3.181 'journalctl -u cloudigan-api --since "1 hour ago" | grep -E "(isRmmProduct|isStandaloneService|Product Type Detection)"'
+# Check if token refresh ran on schedule (~April 20)
+ssh root@10.92.3.181 'cat /var/log/datto-token-refresh.log | tail -20'
+ssh root@10.92.3.182 'cat /var/log/datto-token-refresh.log | tail -20'
 
-# Check token status on LIVE container
+# Check current token status
 ssh root@10.92.3.181 'cd /opt/cloudigan-api && node -e "const t = require(\"./.datto-token.json\"); console.log(\"Expires:\", new Date(t.expires_at), \"Hours remaining:\", Math.round((t.expires_at - Date.now()) / 3600000))"'
 
-# Verify both containers are healthy
+# Verify both containers healthy
 ssh root@10.92.3.181 'curl -s http://localhost:3000/health | grep status'
 ssh root@10.92.3.182 'curl -s http://localhost:3000/health | grep status'
 ```
+
+**Next feature (optional):** Create service confirmation email for technical support purchases.
 
 ## Success Criteria
 - [x] Datto API authentication working
