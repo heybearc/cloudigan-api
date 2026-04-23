@@ -1,20 +1,19 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-04-22
+**Last updated:** 2026-04-22 (evening)
 
 ## Current Task
 **Production Operations & Product Type Handling** - ACTIVE
 
 ### What I'm doing right now
-Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). System is processing customer purchases successfully. Recent work focused on implementing product type detection to handle RMM products vs standalone service products differently.
+Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). Fixed two bugs in purchase notification emails: device quantity was always showing 1 (quantity not populated on unexpanded Stripe session), and product name was hardcoded instead of using actual Stripe product name.
 
 ### Recent completions
+- ✅ Fixed device quantity always showing 1 in purchase emails - April 22
+- ✅ Fixed product name hardcoded in admin notification (now uses actual Stripe product name) - April 22
+- ✅ Synced D-039 AI usage governance rules from control plane - April 22
 - ✅ Implemented product type detection (RMM vs standalone service) - April 17
 - ✅ Deployed product type detection to both BLUE and GREEN containers - April 17
-- ✅ Fixed issue where technical support purchases incorrectly created Datto sites - April 17
-- ✅ Promoted D-038 (Product Type Detection Pattern) to control plane - April 18
-- ✅ Governance sync: pulled new patterns (email dark mode, Stripe device qty, Wix multi-state box) - April 18-22
-- ✅ Migrated IMPLEMENTATION-PLAN.md to PLAN.md per D-035 - April 22
 
 ### Integration Flow (Working)
 ```
@@ -41,19 +40,18 @@ Product Type Detection
 ## Next Steps
 
 ### Immediate
-1. **Create service confirmation email** (optional, next feature)
-   - Currently service product purchases receive no customer-facing email
-   - Should confirm purchase and provide scheduling/contact instructions
-   - Needs new email template in M365 mailer
+1. **Verify email fix with next real purchase**
+   - Confirm admin notification shows correct product name and quantity
+   - Confirm customer welcome email shows correct device count
+   - Watch logs: `journalctl -u cloudigan-api -f | grep -E "deviceQuantity|productName"`
 
-2. **Verify Datto token auto-refresh ran**
-   - Scheduled refresh was ~April 20 on BLUE, ~April 20 6AM on GREEN
-   - Check `/var/log/datto-token-refresh.log` on both containers
-   - Verify email alerts were received
+2. **Create service confirmation email** (next feature)
+   - Customers who buy technical support hours receive no email at all
+   - Should confirm purchase and provide scheduling/contact instructions
+   - Needs new email template + `sendServiceConfirmationEmail()` function
 
 3. **Monitor production webhooks**
-   - Watch logs for product type detection working correctly
-   - `journalctl -u cloudigan-api | grep -E "isRmmProduct|isStandaloneService"`
+   - `journalctl -u cloudigan-api | grep -E "isRmmProduct|isStandaloneService|deviceQuantity"`
 
 ### Operational Maintenance
 1. Token refresh happens automatically every 3 days
@@ -124,21 +122,13 @@ None - system is operational and stable.
 - ✅ No automated token refresh - Implemented cron jobs on both containers
 
 ## Exact Next Command
-**Check if token auto-refresh ran and containers are healthy:**
+**Verify email fix is working in production:**
 ```bash
-# Check if token refresh ran on schedule (~April 20)
-ssh root@10.92.3.181 'cat /var/log/datto-token-refresh.log | tail -20'
-ssh root@10.92.3.182 'cat /var/log/datto-token-refresh.log | tail -20'
-
-# Check current token status
-ssh root@10.92.3.181 'cd /opt/cloudigan-api && node -e "const t = require(\"./.datto-token.json\"); console.log(\"Expires:\", new Date(t.expires_at), \"Hours remaining:\", Math.round((t.expires_at - Date.now()) / 3600000))"'
-
-# Verify both containers healthy
-ssh root@10.92.3.181 'curl -s http://localhost:3000/health | grep status'
-ssh root@10.92.3.182 'curl -s http://localhost:3000/health | grep status'
+# Tail logs on LIVE container and trigger a test purchase
+ssh root@10.92.3.181 'journalctl -u cloudigan-api -f | grep -E "deviceQuantity|productName|Extracted customer"'
 ```
 
-**Next feature (optional):** Create service confirmation email for technical support purchases.
+**Next feature:** Build `sendServiceConfirmationEmail()` in `m365-email.js` for technical support purchase confirmations.
 
 ## Success Criteria
 - [x] Datto API authentication working
