@@ -4,6 +4,7 @@ require('dotenv').config();
  */
 
 const M365OAuthMailer = require('./m365-oauth-mailer');
+const { SUPPORT_EMAIL, NO_REPLY_NOTE } = require('./lib/email-constants');
 
 const M365_CONFIG = {
   clientId: process.env.M365_CLIENT_ID,
@@ -149,7 +150,7 @@ function getBusinessEmailTemplate(data) {
               
               <p style="margin: 20px 0 15px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">Once your devices are installed, we'll take it from there—monitoring, updates, protection, all of it.</p>
               
-              <p style="margin: 0 0 30px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">If anything comes up in the meantime, send an email to <a href="mailto:hello@cloudigan.com" style="color: #3b82f6; text-decoration: none;">hello@cloudigan.com</a></p>
+              <p style="margin: 0 0 30px 0; font-size: 15px; line-height: 1.6; color: #2c3e50;">If anything comes up in the meantime, email <a href="mailto:${SUPPORT_EMAIL}" style="color: #3b82f6; text-decoration: none;">${SUPPORT_EMAIL}</a>. ${NO_REPLY_NOTE}</p>
               
               <!-- Signature -->
               <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 30px;">
@@ -318,7 +319,7 @@ function getHomeProtectEmailTemplate(data) {
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f9ff; border-left: 5px solid #0ea5e9; border-radius: 0 6px 6px 0; padding: 20px; margin: 20px 0;">
                 <tr>
                   <td>
-                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #0c4a6e;">Home Protect is designed to be simple and hands-off, but if you have questions, send a message to <a href="mailto:hello@cloudigan.com" style="color: #0ea5e9; text-decoration: none;">hello@cloudigan.com</a> and we'll point you in the right direction.</p>
+                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #0c4a6e;">Home Protect is designed to be simple and hands-off, but if you have questions, email <a href="mailto:${SUPPORT_EMAIL}" style="color: #0ea5e9; text-decoration: none;">${SUPPORT_EMAIL}</a> and we'll point you in the right direction. ${NO_REPLY_NOTE}</p>
                   </td>
                 </tr>
               </table>
@@ -388,7 +389,7 @@ A COUPLE QUICK TIPS
 WHAT HAPPENS NEXT
 Your Cloudigan Rep will be reaching out within 24 hours to give you the official welcome.
 
-If anything comes up in the meantime, send an email to hello@cloudigan.com
+If anything comes up in the meantime, email ${SUPPORT_EMAIL}. ${NO_REPLY_NOTE}
 
 Looking forward to working with you,
 Cory Allen
@@ -415,7 +416,7 @@ LET'S GET YOU SET UP:
    After installation, everything runs quietly in the background.
 
 NEED HELP?
-Home Protect is designed to be simple and hands-off, but if you have questions, send a message to hello@cloudigan.com
+Home Protect is designed to be simple and hands-off, but if you have questions, email ${SUPPORT_EMAIL}. ${NO_REPLY_NOTE}
 
 Thanks again for trusting Cloudigan.
 – The Cloudigan Team
