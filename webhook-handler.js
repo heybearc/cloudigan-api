@@ -30,7 +30,8 @@ const { getAlerter } = require('./lib/alerting');
 const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
-const { sendWelcomeEmail, sendPurchaseNotification } = require('./m365-email');
+const { sendWelcomeEmail, sendServiceConfirmationEmail, sendPurchaseNotification } = require('./m365-email');
+const { classifyProduct, isRmmProfile, buildAdminActionSummary } = require('./lib/product-profiles');
 const { startTokenMonitoring } = require('./lib/token-monitor');
 const path = require('path');
 
@@ -248,14 +249,9 @@ app.post('/webhook/stripe',
                                    productNameLower.includes('complete package') ||
                                    productNameLower.includes('essentials');
           
-          // Determine product category:
-          // - RMM products: Home Protect, Business packages, Management packages (need Datto site)
-          // - Service products: Technical Support hours only (no Datto site needed)
-          const isStandaloneService = productNameLower.includes('technical support') ||
-                                     productNameLower.includes('support hour') ||
-                                     productNameLower.includes('consulting hour');
-          
-          const isRmmProduct = !isStandaloneService; // Everything else is an RMM product
+          const profileId = classifyProduct(productName, session.metadata?.product_id);
+          const isRmmProduct = isRmmProfile(profileId);
+          const isStandaloneService = !isRmmProduct;
           
           // Log extracted data for debugging
           requestLogger.info('Extracted customer data', { 
@@ -264,11 +260,21 @@ app.post('/webhook/stripe',
             customerName,
             productName,
             isBusinessProduct,
+            profileId,
             isRmmProduct,
             isStandaloneService,
             deviceQuantity
           });
           
+          const processingResults = {
+            dattoSiteCreated: false,
+            downloadLinksGenerated: false,
+            welcomeEmailSent: false,
+            wixCmsCreated: false,
+            wixConfigured: !!(process.env.WIX_API_KEY && process.env.WIX_SITE_ID),
+            serviceConfirmationSent: false,
+          };
+
           const customerData = {
             email: session.customer_details.email,
             companyName: companyName || (isBusinessProduct ? customerName : ''),
@@ -280,6 +286,7 @@ app.post('/webhook/stripe',
             productId: session.metadata?.product_id,
             productName: productName,
             isBusinessProduct: isBusinessProduct, // Determined from actual Stripe product
+            profileId,
             isRmmProduct: isRmmProduct, // Whether this product requires Datto RMM site
             isStandaloneService: isStandaloneService, // Whether this is a standalone service (no RMM)
             deviceQuantity: deviceQuantity
@@ -316,6 +323,8 @@ app.post('/webhook/stripe',
 
             // Generate all platform download links
             downloadLinks = generateDownloadLinks(dattoSite.id, dattoSite.uid);
+            processingResults.dattoSiteCreated = true;
+            processingResults.downloadLinksGenerated = true;
             
             requestLogger.info('Download links generated', {
               siteUid: dattoSite.uid,
@@ -350,6 +359,7 @@ app.post('/webhook/stripe',
               });
               const wixDuration = (Date.now() - wixStartTime) / 1000;
               recordSignupFlowStage('wix_cms_write', 'success', customerData.isBusinessProduct ? 'business' : 'personal', wixDuration);
+              processingResults.wixCmsCreated = true;
               requestLogger.info('Wix CMS record created', { email: customerData.email });
             } catch (error) {
               recordSignupFlowStage('wix_cms_write', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
@@ -380,31 +390,43 @@ app.post('/webhook/stripe',
                   siteUid: dattoSite?.uid,
                   deviceQuantity: customerData.deviceQuantity
                 });
+                processingResults.welcomeEmailSent = true;
                 requestLogger.info('Welcome email sent (RMM product)', { email: customerData.email });
               } else {
-                // Send service confirmation email for standalone service products
-                // TODO: Create sendServiceConfirmationEmail function
-                requestLogger.info('Service product - skipping RMM welcome email', {
+                await sendServiceConfirmationEmail({
+                  customerEmail: customerData.email,
+                  customerName: customerData.customerName,
+                  companyName: customerData.companyName,
                   productName: customerData.productName,
-                  email: customerData.email
+                  deviceQuantity: customerData.deviceQuantity,
+                  amountTotal: session.amount_total,
+                  currency: session.currency,
                 });
-                // For now, just log - you may want to send a different confirmation email
+                processingResults.serviceConfirmationSent = true;
+                requestLogger.info('Service confirmation email sent', {
+                  productName: customerData.productName,
+                  email: customerData.email,
+                });
               }
-              
+
               const emailDuration = (Date.now() - emailStartTime) / 1000;
-              recordSignupFlowStage('welcome_email', 'success', customerData.isRmmProduct ? 'rmm' : 'service', emailDuration);
+              const emailStage = customerData.isRmmProduct ? 'welcome_email' : 'service_confirmation';
+              recordSignupFlowStage(emailStage, 'success', customerData.isRmmProduct ? 'rmm' : 'service', emailDuration);
             } catch (error) {
-              recordSignupFlowStage('welcome_email', 'failed', customerData.isRmmProduct ? 'rmm' : 'service');
+              const emailStage = customerData.isRmmProduct ? 'welcome_email' : 'service_confirmation';
+              recordSignupFlowStage(emailStage, 'failed', customerData.isRmmProduct ? 'rmm' : 'service');
               requestLogger.warn('Email send failed (non-critical)', { error: error.message });
             }
           } else {
             requestLogger.info('M365 email not configured - skipping email');
           }
 
-          // Send purchase notification to admin
+          // Send purchase notification to admin (after customer emails so action list is accurate)
           if (process.env.M365_CLIENT_ID && process.env.ALERT_EMAIL) {
             try {
+              const adminActions = buildAdminActionSummary(profileId, processingResults);
               await sendPurchaseNotification({
+                profileId,
                 customerEmail: customerData.email,
                 customerName: customerData.customerName,
                 companyName: customerData.companyName,
@@ -414,7 +436,9 @@ app.post('/webhook/stripe',
                 siteUid: dattoSite?.uid,
                 sessionId: session.id,
                 amountTotal: session.amount_total,
-                currency: session.currency
+                currency: session.currency,
+                actions: adminActions,
+                serverLabel: process.env.NOTIFICATION_SERVER_LABEL || os.hostname(),
               });
               requestLogger.info('Purchase notification sent to admin', { email: customerData.email });
             } catch (error) {
@@ -433,12 +457,14 @@ app.post('/webhook/stripe',
           
           requestLogger.info('Webhook processed successfully', {
             duration,
-            siteUid: dattoSite.uid
+            profileId,
+            siteUid: dattoSite?.uid || null
           });
 
           res.json({ 
             received: true, 
-            dattoSiteUid: dattoSite.uid,
+            profileId,
+            dattoSiteUid: dattoSite?.uid || null,
             correlationId: req.correlationId
           });
         });

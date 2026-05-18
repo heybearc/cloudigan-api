@@ -4,7 +4,7 @@
  */
 
 require('dotenv').config();
-const { sendWelcomeEmail } = require('./m365-email');
+const { sendWelcomeEmail, sendServiceConfirmationEmail } = require('./m365-email');
 
 // Test data for business customer
 const businessTestData = {
@@ -34,10 +34,26 @@ const homeProtectTestData = {
   }
 };
 
+const serviceTestData = {
+  customerEmail: 'cory@cloudigan.com',
+  customerName: 'Test Customer',
+  productName: 'Technical Support - Block of Hours',
+  deviceQuantity: 1,
+  amountTotal: 50000,
+  currency: 'usd',
+};
+
 async function runTests() {
+  const serviceOnly = process.argv.includes('--service');
   console.log('🧪 Testing Email Templates on STANDBY\n');
-  
+
   try {
+    if (serviceOnly) {
+      console.log('📧 Sending Service Confirmation Test...');
+      await sendServiceConfirmationEmail(serviceTestData);
+      console.log('✅ Service confirmation email sent\n');
+      return;
+    }
     // Test business email
     console.log('📧 Sending Business Email Test...');
     console.log('   To:', businessTestData.customerEmail);
