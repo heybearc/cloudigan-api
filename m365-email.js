@@ -443,6 +443,34 @@ Thanks again for trusting Cloudigan.
 }
 
 /**
+ * Send purchase confirmation to customer (Chapter Hub subscription).
+ */
+async function sendChapterHubConfirmationEmail(data) {
+  const m365Mailer = getMailer();
+  if (!m365Mailer) {
+    throw new Error('M365 mailer not configured');
+  }
+
+  const { buildChapterHubConfirmationEmail } = require('./lib/chapter-hub-confirmation-email');
+  const { subject, htmlContent, textContent } = buildChapterHubConfirmationEmail(data);
+
+  try {
+    await m365Mailer.sendMail({
+      to: data.customerEmail,
+      subject,
+      html: htmlContent,
+      text: textContent,
+    });
+
+    console.log('Chapter Hub confirmation email sent to:', data.customerEmail);
+    return true;
+  } catch (error) {
+    console.error('Chapter Hub confirmation email failed:', error.message);
+    throw new Error(`Failed to send Chapter Hub confirmation email: ${error.message}`);
+  }
+}
+
+/**
  * Send purchase confirmation to customer (support hours / professional services).
  * Complements the Stripe receipt — does not replace it.
  */
@@ -502,6 +530,7 @@ async function sendPurchaseNotification(data) {
 
 module.exports = {
   sendWelcomeEmail,
+  sendChapterHubConfirmationEmail,
   sendServiceConfirmationEmail,
   sendPurchaseNotification,
 };

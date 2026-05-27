@@ -30,7 +30,12 @@ const { getAlerter } = require('./lib/alerting');
 const dattoAuth = require('./datto-auth');
 const { generateDownloadLinks } = require('./download-links');
 const { insertCustomerDownload } = require('./wix-cms');
-const { sendWelcomeEmail, sendServiceConfirmationEmail, sendPurchaseNotification } = require('./m365-email');
+const {
+  sendWelcomeEmail,
+  sendChapterHubConfirmationEmail,
+  sendServiceConfirmationEmail,
+  sendPurchaseNotification,
+} = require('./m365-email');
 const { classifyProduct, isRmmProfile, buildAdminActionSummary } = require('./lib/product-profiles');
 const { startTokenMonitoring } = require('./lib/token-monitor');
 const path = require('path');
@@ -273,6 +278,7 @@ app.post('/webhook/stripe',
             wixCmsCreated: false,
             wixConfigured: !!(process.env.WIX_API_KEY && process.env.WIX_SITE_ID),
             serviceConfirmationSent: false,
+            chapterHubConfirmationSent: false,
           };
 
           const customerData = {
@@ -334,11 +340,12 @@ app.post('/webhook/stripe',
               linux: downloadLinks.linux
             });
           } else {
-            requestLogger.info('Standalone service product - skipping Datto site creation', {
+            requestLogger.info('Non-RMM product - skipping Datto site creation', {
+              profileId: customerData.profileId,
               productName: customerData.productName,
-              email: customerData.email
+              email: customerData.email,
             });
-            recordSignupFlowStage('datto_site_creation', 'skipped', 'service_product');
+            recordSignupFlowStage('datto_site_creation', 'skipped', profileId);
           }
 
           // Insert into Wix CMS (if configured) - only for RMM products
@@ -365,9 +372,10 @@ app.post('/webhook/stripe',
               recordSignupFlowStage('wix_cms_write', 'failed', customerData.isBusinessProduct ? 'business' : 'personal');
               requestLogger.warn('Wix CMS insert failed (non-critical)', { error: error.message });
             }
-          } else if (customerData.isStandaloneService) {
-            requestLogger.info('Standalone service product - skipping Wix CMS (no RMM site)', {
-              productName: customerData.productName
+          } else if (!customerData.isRmmProduct) {
+            requestLogger.info('Non-RMM product - skipping Wix CMS', {
+              profileId: customerData.profileId,
+              productName: customerData.productName,
             });
           } else {
             requestLogger.info('Wix CMS not configured - skipping');
@@ -378,8 +386,7 @@ app.post('/webhook/stripe',
             try {
               const emailStartTime = Date.now();
               
-              if (customerData.isRmmProduct) {
-                // Send welcome email with download links for RMM products
+              if (customerData.profileId === 'rmm') {
                 await sendWelcomeEmail({
                   customerEmail: customerData.email,
                   customerName: customerData.customerName,
@@ -388,10 +395,24 @@ app.post('/webhook/stripe',
                   productName: customerData.productName,
                   downloadLinks,
                   siteUid: dattoSite?.uid,
-                  deviceQuantity: customerData.deviceQuantity
+                  deviceQuantity: customerData.deviceQuantity,
                 });
                 processingResults.welcomeEmailSent = true;
                 requestLogger.info('Welcome email sent (RMM product)', { email: customerData.email });
+              } else if (customerData.profileId === 'chapter-hub') {
+                await sendChapterHubConfirmationEmail({
+                  customerEmail: customerData.email,
+                  customerName: customerData.customerName,
+                  companyName: customerData.companyName,
+                  productName: customerData.productName,
+                  amountTotal: session.amount_total,
+                  currency: session.currency,
+                });
+                processingResults.chapterHubConfirmationSent = true;
+                requestLogger.info('Chapter Hub confirmation email sent', {
+                  productName: customerData.productName,
+                  email: customerData.email,
+                });
               } else {
                 await sendServiceConfirmationEmail({
                   customerEmail: customerData.email,
@@ -410,11 +431,21 @@ app.post('/webhook/stripe',
               }
 
               const emailDuration = (Date.now() - emailStartTime) / 1000;
-              const emailStage = customerData.isRmmProduct ? 'welcome_email' : 'service_confirmation';
-              recordSignupFlowStage(emailStage, 'success', customerData.isRmmProduct ? 'rmm' : 'service', emailDuration);
+              const emailStage =
+                customerData.profileId === 'rmm'
+                  ? 'welcome_email'
+                  : customerData.profileId === 'chapter-hub'
+                    ? 'chapter_hub_confirmation'
+                    : 'service_confirmation';
+              recordSignupFlowStage(emailStage, 'success', profileId, emailDuration);
             } catch (error) {
-              const emailStage = customerData.isRmmProduct ? 'welcome_email' : 'service_confirmation';
-              recordSignupFlowStage(emailStage, 'failed', customerData.isRmmProduct ? 'rmm' : 'service');
+              const emailStage =
+                customerData.profileId === 'rmm'
+                  ? 'welcome_email'
+                  : customerData.profileId === 'chapter-hub'
+                    ? 'chapter_hub_confirmation'
+                    : 'service_confirmation';
+              recordSignupFlowStage(emailStage, 'failed', profileId);
               requestLogger.warn('Email send failed (non-critical)', { error: error.message });
             }
           } else {
