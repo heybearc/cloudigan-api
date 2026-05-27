@@ -409,7 +409,7 @@ app.post('/webhook/stripe',
                   currency: session.currency,
                 });
                 processingResults.chapterHubConfirmationSent = true;
-                requestLogger.info('Chapter Hub confirmation email sent', {
+                requestLogger.info('BNI Chapter Hub confirmation email sent', {
                   productName: customerData.productName,
                   email: customerData.email,
                 });

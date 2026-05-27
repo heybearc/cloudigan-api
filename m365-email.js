@@ -443,7 +443,7 @@ Thanks again for trusting Cloudigan.
 }
 
 /**
- * Send purchase confirmation to customer (Chapter Hub subscription).
+ * Send purchase confirmation to customer (BNI Chapter Hub subscription).
  */
 async function sendChapterHubConfirmationEmail(data) {
   const m365Mailer = getMailer();
@@ -462,11 +462,11 @@ async function sendChapterHubConfirmationEmail(data) {
       text: textContent,
     });
 
-    console.log('Chapter Hub confirmation email sent to:', data.customerEmail);
+    console.log('BNI Chapter Hub confirmation email sent to:', data.customerEmail);
     return true;
   } catch (error) {
-    console.error('Chapter Hub confirmation email failed:', error.message);
-    throw new Error(`Failed to send Chapter Hub confirmation email: ${error.message}`);
+    console.error('BNI Chapter Hub confirmation email failed:', error.message);
+    throw new Error(`Failed to send BNI Chapter Hub confirmation email: ${error.message}`);
   }
 }
 
