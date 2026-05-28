@@ -1,139 +1,109 @@
 # Cloudigan API Plan
 
-**Last updated:** 2026-04-19  
-**Current phase:** Phase 2 Complete - Production Operations  
-**Status:** Production deployment operational
+**Last updated:** 2026-05-28  
+**Current phase:** Phase 2 Complete — Production Operations  
+**Status:** Production deployment operational; multi-product email routing live
 
 ---
 
 ## Current Phase
 
 ### Active Work
-- [ ] **Monitoring & Observability** - Monitor production webhook events and system health
+- [ ] **Monitor multi-product purchases** — Confirm BNI Chapter Hub and support-hour emails in production
+- [ ] **MCP ops fix** — Add `port: 3000` to cloudigan-api in homelab-blue-green MCP (unblocks automated release)
 
-### Completed This Phase
+### Recently Completed
+- ✅ Product profile system (`rmm`, `service`, `chapter-hub`) — 2026-05-28
+- ✅ Support-hour customer confirmation email — 2026-05-28
+- ✅ BNI Chapter Hub profile + customer email (`hub.cloudigan.net`) — 2026-05-28
+- ✅ Profile-driven admin purchase notifications — 2026-05-28
+- ✅ Removed confusing cross-product disclaimers from customer emails — 2026-05-28
+- ✅ Blue-green release + sync (both nodes `5835a38`) — 2026-05-28
 - ✅ Stripe webhook integration (2026-03-17)
 - ✅ Datto RMM API integration with OAuth automation (2026-03-17)
 - ✅ Wix CMS integration for customer data storage (2026-03-17)
 - ✅ Blue-green deployment infrastructure (CT181, CT182) (2026-03-17)
-- ✅ HAProxy routing configuration (2026-03-17)
-- ✅ M365 OAuth2 email integration (2026-03-17)
-- ✅ MCP server integration for deployment management (2026-03-18)
-- ✅ Wix Thank-You Page Setup (2026-03-18)
-- ✅ Error Handling & Monitoring (2026-03-18)
+- ✅ Product type detection — keyword-based RMM vs service (2026-04-17)
 
 ---
 
 ## Prioritized Backlog
 
 ### High Priority
-None currently - Phase 2 complete!
+- [ ] **MCP cloudigan-api port fix** — Set `port: 3000` in homelab-blue-green MCP config (effort: S)
+- [ ] **MCP deploy_to_standby skip build** — cloudigan-api has no `npm run build`; use systemd restart only (effort: S)
 
 ### Medium Priority
-- [ ] **Admin Dashboard** - Simple dashboard to view webhook events, customer downloads, and system health (effort: L)
-- [ ] **Rate Limiting** - Implement rate limiting to prevent abuse of webhook endpoint (effort: S)
-- [ ] **Automated Testing** - Add automated tests for webhook processing, Datto integration, and Wix CMS operations (effort: M)
+- [ ] **Stripe product ID overrides** — Populate `PRODUCT_ID_OVERRIDES` in `lib/product-profiles.js` for edge-case product names (effort: S)
+- [ ] **Admin Dashboard** — View webhook events, customer downloads, system health (effort: L)
+- [ ] **Rate Limiting** — Prevent webhook endpoint abuse (effort: S)
+- [ ] **Automated Testing** — Webhook processing, Datto integration, Wix CMS (effort: M)
 
 ### Low Priority
-- [ ] **Analytics Integration** - Track conversion metrics, download rates, and customer engagement (effort: M)
-- [ ] **Multi-Product Support** - Extend to support multiple Cloudigan products beyond RMM agent (effort: L)
-- [ ] **Customer Portal** - Self-service portal for customers to re-download agents or manage licenses (effort: XL)
-- [ ] **Documentation** - Create API documentation and integration guides for future maintenance (effort: S)
-- [ ] **Backup Strategy** - Implement automated backups for application state and configuration (effort: S)
+- [ ] **Analytics Integration** — Conversion metrics, download rates (effort: M)
+- [ ] **Customer Portal** — Self-service agent re-download (effort: XL)
+- [ ] **Documentation** — API docs and integration guides (effort: S)
 
 ---
 
 ## Known Issues
 
-None currently - all systems operational.
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| MCP health check uses port 3001 | Blocks automated `/release` via MCP | Manual HAProxy switch |
+| MCP deploy runs `npm run build` | Deploy fails on STANDBY | SSH: `git pull && systemctl restart cloudigan-api` |
+| Erroneous Datto site from pre-fix Chapter Hub test | Orphan site in Datto | Manual cleanup if needed |
+
+---
+
+## User Feedback (2026-05-28)
+
+- Support-hour admin emails showed RMM fields (Datto UID, devices) and false automated actions — **fixed** via product profiles
+- Customer emails should not describe what the product is *not* (RMM, Datto, etc.) — **fixed**
+- Chapter Hub product misclassified as RMM — **fixed** with `chapter-hub` profile
+- Product is **BNI Chapter Hub**; app URL is **hub.cloudigan.net** — **fixed**
 
 ---
 
 ## Roadmap
 
-### Phase 1: Production Integration
-**Status:** Completed (Q1 2026)  
-**Objectives:**
-- Stripe to Datto RMM integration
-- Customer data management
-- Email automation
+### Phase 1: Production Integration — Completed (Q1 2026)
+Stripe → Datto → Wix → email automation
 
-**Deliverables:**
-- ✅ Stripe webhook handler
-- ✅ Datto RMM API integration
-- ✅ Wix CMS integration
-- ✅ Blue-green deployment infrastructure
-- ✅ M365 email integration
+### Phase 2: Production Hardening — Completed (Mar 2026)
+Error handling, MCP integration, monitoring
 
-### Phase 2: Production Hardening
-**Status:** Completed (Mar 2026)  
-**Objectives:**
-- Error handling and monitoring
-- MCP integration
-- Wix thank-you page
+### Phase 3: Multi-Product Operations — In Progress
+- ✅ Product profiles and profile-specific emails
+- [ ] MCP ops fixes for cloudigan-api
+- [ ] Admin dashboard, rate limiting, automated tests
 
-**Deliverables:**
-- ✅ Comprehensive error handling
-- ✅ MCP server integration
-- ✅ Wix thank-you page setup
-- ✅ Production monitoring
-
-### Phase 3: Enhanced Operations
-**Status:** Planned  
-**Objectives:**
-- Admin dashboard
-- Rate limiting
-- Automated testing
-
-**Deliverables:**
-- Admin dashboard for webhook events
-- Rate limiting implementation
-- Automated test suite
-- API documentation
-
-### Phase 4: Platform Expansion
-**Status:** Future  
-**Objectives:**
-- Multi-product support
-- Customer portal
-- Analytics integration
-
-**Deliverables:**
-- Support for multiple Cloudigan products
-- Self-service customer portal
-- Conversion and engagement analytics
+### Phase 4: Platform Expansion — Future
+Multi-product support, customer portal, analytics
 
 ---
 
 ## Notes
 
 ### Project Description
-Stripe webhook to Datto RMM integration API. Automates customer onboarding by:
-1. Receiving Stripe payment webhooks
-2. Creating Datto RMM site and downloading agent
-3. Storing customer data in Wix CMS
-4. Sending download link via M365 email
-5. Redirecting to Wix thank-you page
+Stripe webhook integration API. Routes purchases by product profile:
+1. **RMM** — Datto site, welcome email, Wix CMS, admin notification
+2. **Service** — Service confirmation email, admin notification
+3. **BNI Chapter Hub** — Chapter Hub welcome email (`hub.cloudigan.net`), admin notification
 
 ### Infrastructure
 **Deployment:**
-- Blue: CT181 (STANDBY)
-- Green: CT182 (LIVE)
-- HAProxy routing
-- Port: 3001 (standard)
+- BLUE: CT181 (10.92.3.181) — LIVE
+- GREEN: CT182 (10.92.3.182) — STANDBY
+- HAProxy routing via `api.cloudigan.net`
+- Port: **3000** (not 3001)
 
-**Integrations:**
-- Stripe (webhooks)
-- Datto RMM (OAuth + API)
-- Wix CMS (customer data)
-- M365 (email automation)
+**Key files:**
+- `lib/product-profiles.js` — classification + admin action labels
+- `lib/service-confirmation-email.js` — support-hour customer email
+- `lib/chapter-hub-confirmation-email.js` — BNI Chapter Hub customer email
+- `lib/admin-purchase-email.js` — profile-driven admin notifications
+- `webhook-handler.js` — routing by `profileId`
 
 ### Effort Sizing Guide
-- **S (Small):** 1-4 hours
-- **M (Medium):** 1-2 days
-- **L (Large):** 3-5 days
-- **XL (Extra Large):** 1+ weeks
-
-### Key Files
-- **TASK-STATE.md** - Current work and daily context
-- **PLAN.md** - This file - long-term planning and backlog
+- **S:** 1-4 hours | **M:** 1-2 days | **L:** 3-5 days | **XL:** 1+ weeks

@@ -5,3 +5,11 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+
+# Control plane symlinks (created by setup script)
+.windsurf/workflows/*.md
+.windsurf/skills/*/
+.windsurf/rules/*.md
+.cursor/commands/*.md
+.cursor/rules/*.md
+.cursor/skills/*/

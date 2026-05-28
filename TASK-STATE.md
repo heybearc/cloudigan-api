@@ -1,19 +1,20 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-04-22 (evening)
+**Last updated:** 2026-05-28
 
 ## Current Task
-**Production Operations & Product Type Handling** - ACTIVE
+**Product-profile email routing (RMM / service / BNI Chapter Hub)** - COMPLETE — monitoring
 
 ### What I'm doing right now
-Cloudigan API is deployed and operational on blue-green containers (CT181/CT182). Fixed two bugs in purchase notification emails: device quantity was always showing 1 (quantity not populated on unexpanded Stripe session), and product name was hardcoded instead of using actual Stripe product name.
+Profile-driven purchase emails are live on both nodes. Next real purchases should be watched to confirm correct routing (no Datto for service/Chapter Hub, correct customer templates).
 
 ### Recent completions
-- ✅ Fixed device quantity always showing 1 in purchase emails - April 22
-- ✅ Fixed product name hardcoded in admin notification (now uses actual Stripe product name) - April 22
-- ✅ Synced D-039 AI usage governance rules from control plane - April 22
-- ✅ Implemented product type detection (RMM vs standalone service) - April 17
-- ✅ Deployed product type detection to both BLUE and GREEN containers - April 17
+- ✅ Product profiles: `rmm`, `service`, `chapter-hub` with profile-driven admin + customer emails — May 28
+- ✅ Support-hour customer confirmation + fixed admin notifications (no false Datto/Wix actions) — May 28
+- ✅ BNI Chapter Hub profile — skips RMM provisioning, dedicated customer email — May 28
+- ✅ Removed cross-product disclaimers from customer emails (no "not RMM" language) — May 28
+- ✅ BNI Chapter Hub branding + `hub.cloudigan.net` links — May 28
+- ✅ Released to LIVE (BLUE) and synced GREEN — both on `5835a38` — May 28
 
 ### Integration Flow (Working)
 ```
@@ -23,137 +24,63 @@ Stripe processes payment
     ↓
 Webhook → api.cloudigan.net/webhook/stripe
     ↓
-Product Type Detection
+Product Profile (classifyProduct)
     ↓
-┌─────────────────────────────────────┬──────────────────────────────────┐
-│ RMM Products                        │ Standalone Service Products      │
-│ (Home Protect, Business, etc.)      │ (Technical Support Hours)        │
-├─────────────────────────────────────┼──────────────────────────────────┤
-│ ✅ Create Datto RMM site            │ ❌ Skip Datto site creation      │
-│ ✅ Generate download links          │ ❌ Skip download links           │
-│ ✅ Send welcome email               │ ❌ Skip welcome email            │
-│ ✅ Insert into Wix CMS              │ ❌ Skip Wix CMS                  │
-│ ✅ Send admin notification          │ ✅ Send admin notification       │
-└─────────────────────────────────────┴──────────────────────────────────┘
+┌──────────────────────┬─────────────────────────┬──────────────────────────────┐
+│ RMM (default)        │ service                 │ chapter-hub                  │
+│ Home Protect, etc.   │ Support hours           │ BNI Chapter Hub              │
+├──────────────────────┼─────────────────────────┼──────────────────────────────┤
+│ ✅ Datto site        │ ❌ Skip Datto           │ ❌ Skip Datto                │
+│ ✅ Welcome email     │ ✅ Service confirmation │ ✅ BNI Chapter Hub email     │
+│ ✅ Wix CMS           │ ❌ Skip Wix             │ ❌ Skip Wix                  │
+│ ✅ Admin notification│ ✅ Admin notification   │ ✅ Admin notification        │
+└──────────────────────┴─────────────────────────┴──────────────────────────────┘
 ```
 
 ## Next Steps
 
 ### Immediate
-1. **Verify email fix with next real purchase**
-   - Confirm admin notification shows correct product name and quantity
-   - Confirm customer welcome email shows correct device count
-   - Watch logs: `journalctl -u cloudigan-api -f | grep -E "deviceQuantity|productName"`
+1. **Verify next real BNI Chapter Hub purchase**
+   - Customer email: BNI Chapter Hub branding, button → `hub.cloudigan.net`
+   - Admin email: processing summary only (no Datto/Wix false positives)
+   - No Datto site created
 
-2. **Create service confirmation email** (next feature)
-   - Customers who buy technical support hours receive no email at all
-   - Should confirm purchase and provide scheduling/contact instructions
-   - Needs new email template + `sendServiceConfirmationEmail()` function
+2. **Verify support-hour purchase still correct**
+   - Service confirmation to customer; admin shows service actions only
 
-3. **Monitor production webhooks**
-   - `journalctl -u cloudigan-api | grep -E "isRmmProduct|isStandaloneService|deviceQuantity"`
+3. **Fix MCP health check port for cloudigan-api** (ops)
+   - MCP defaults to port 3001; app runs on 3000
+   - Blocks `switch_traffic` / deploy health checks — manual HAProxy switch used for release
 
-### Operational Maintenance
-1. Token refresh happens automatically every 3 days
-2. Product type detection is fully dynamic (keyword-based)
-3. Health checks via HAProxy on both containers
-4. Metrics available at `/metrics` endpoint
-5. Logs via `journalctl -u cloudigan-api`
+### Optional cleanup
+- Review/clean up Datto site created by Chapter Hub test purchase before profile fix (if still present)
 
-## Files Ready for Handoff
+## Deployment State
+| Role | Server | IP | Commit |
+|------|--------|-----|--------|
+| **LIVE** | BLUE (CT181) | 10.92.3.181 | `5835a38` |
+| **STANDBY** | GREEN (CT182) | 10.92.3.182 | `5835a38` |
 
-### Application Code
-- `webhook-handler.js` - Main webhook server (Express.js)
-- `datto-auth.js` - OAuth automation (Playwright)
-- `package.json` - Dependencies
-- `.env.template` - Environment variables
-
-### Documentation
-- `HOMELAB-ARCHITECTURE.md` - Complete LXC container architecture
-- `CONTROL-PLANE-PROMOTION.md` - Governance documentation
-- `NEXUS-HANDOFF.md` - Deployment guide for nexus team
-- `INTEGRATION-COMPLETE.md` - Technical integration details
-- `QUICK-START.md` - Alternative cloud deployment (Railway)
-
-### Configuration
-- Systemd service file
-- HAProxy backend configuration
-- LXC container specification
-- Environment variables template
-
-## Technical Details
-
-### Product Type Detection (New - April 17, 2026)
-- **Detection Method**: Keyword-based analysis of Stripe product names
-- **RMM Products**: All products except those with service keywords
-  - Home Protect, Business Essentials, Complete Package, Management packages
-  - Creates Datto site, sends welcome email, inserts into Wix CMS
-- **Service Products**: Products containing keywords:
-  - "technical support", "support hour", "consulting hour"
-  - Skips Datto site, skips welcome email, skips Wix CMS
-  - Admin notification still sent
-- **Fully Dynamic**: No code changes needed for new products
-- **Logging**: Product type classification logged for all purchases
-
-### Authentication Solution
-- **Problem**: Datto OAuth requires browser interaction
-- **Solution**: Playwright automation for OAuth flow
-- **Result**: Fully automated token refresh every 100 hours
-- **Token**: Cached in `.datto-token.json`, auto-refreshes
-
-### Architecture
-- **Deployment**: LXC container (not Docker)
-- **Management**: Systemd service
-- **Routing**: HAProxy → container port 3000
-- **Domain**: api.cloudigan.net
-- **Pattern**: Blue-green (STANDBY → LIVE)
-
-### Integration Points
-1. **Stripe**: Webhook for `checkout.session.completed`
-2. **Datto RMM**: Site creation API (vidal-api.centrastage.net) - RMM products only
-3. **Wix CMS**: Customer tracking - RMM products only
+HAProxy: `use_backend cloudigan_api_blue if is_cloudigan_api`
 
 ## Known Issues
-None - system is operational and stable.
-
-**Recent Issues Resolved:**
-- ✅ Datto OAuth token expired (10 days old) - Fixed April 1, 2026
-- ✅ Token monitoring alerts not sending - Fixed mailer initialization
-- ✅ No automated token refresh - Implemented cron jobs on both containers
+- **MCP health checks wrong port:** `homelab-blue-green-mcp` has no `port: 3000` for `cloudigan-api`, so MCP reports nodes DOWN and blocks automated traffic switch. Workaround: manual HAProxy sed + reload (documented in release workflow).
+- **MCP deploy_to_standby:** runs `npm run build` which does not exist for cloudigan-api; use `git pull && systemctl restart cloudigan-api` instead.
 
 ## Exact Next Command
-**Verify email fix is working in production:**
+Watch logs on next purchase:
 ```bash
-# Tail logs on LIVE container and trigger a test purchase
-ssh root@10.92.3.181 'journalctl -u cloudigan-api -f | grep -E "deviceQuantity|productName|Extracted customer"'
+ssh -i ~/.ssh/homelab_root root@10.92.3.181 'journalctl -u cloudigan-api -f | grep -E "profileId|chapter-hub|service|isRmmProduct"'
 ```
 
-**Next feature:** Build `sendServiceConfirmationEmail()` in `m365-email.js` for technical support purchase confirmations.
+Or send test Chapter Hub emails on LIVE:
+```bash
+ssh -i ~/.ssh/homelab_root root@10.92.3.181 'cd /opt/cloudigan-api && node scripts/test-chapter-hub-emails.js'
+```
 
 ## Success Criteria
-- [x] Datto API authentication working
-- [x] Site creation tested and confirmed
-- [x] OAuth token auto-refresh implemented (cron jobs on both containers)
-- [x] Webhook handler complete with product type detection
-- [x] LXC architecture documented
-- [x] Control plane governance created
-- [x] Deployed to homelab (CT181 BLUE - LIVE, CT182 GREEN - STANDBY)
-- [x] Stripe webhook configured and processing payments
-- [x] Wix CMS integration working (RMM products only)
-- [x] End-to-end test with real customers (4+ customers processed successfully)
-- [x] Token monitoring and alerting system operational
-- [x] Blue-green deployment pattern implemented
-- [x] Product type detection implemented (RMM vs service products)
-- [x] Service products skip Datto site creation correctly
-
-## Notes
-- **System is LIVE and processing customer purchases**
-- Deployed on containers CT181 (BLUE - LIVE) and CT182 (GREEN - STANDBY)
-- HAProxy routing traffic to BLUE container
-- Automated token refresh every 3 days (staggered: BLUE midnight, GREEN 6 AM)
-- Email alerts configured for token expiration and refresh events
-- **Product type detection active** - RMM products create Datto sites, service products skip
-- Dynamic detection based on product name keywords (no code changes needed for new products)
-- 4+ customers successfully processed in Wix CMS
-- Manual processing capability tested (Patrick Frost - Cleveland Wrap)
-- Technical support purchases now handled correctly (skip Datto site creation)
+- [x] Product profiles route RMM / service / chapter-hub correctly
+- [x] Customer emails product-specific (no cross-product disclaimers)
+- [x] BNI Chapter Hub uses `hub.cloudigan.net`
+- [x] Deployed and released to LIVE
+- [ ] Verified with next real Chapter Hub purchase
