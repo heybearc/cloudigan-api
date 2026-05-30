@@ -13,3 +13,6 @@ node_modules/
 .cursor/commands/*.md
 .cursor/rules/*.md
 .cursor/skills/*/
+
+# MCP is global only (~/.cursor/mcp.json) — do not commit project mcp.json (D-053)
+.cursor/mcp.json
