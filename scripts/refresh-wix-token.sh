@@ -66,8 +66,8 @@ if echo "$RESPONSE" | jq -e '.access_token' > /dev/null 2>&1; then
     log "SUCCESS: Token refreshed successfully (expires in ${EXPIRES_IN}s)"
     
     # Restart webhook service to pick up new token
-    systemctl restart cloudigan-api
-    log "Restarted cloudigan-api service"
+    pm2 restart cloudigan-api
+    log "Restarted cloudigan-api (PM2)"
 else
     log "ERROR: Token refresh failed: $RESPONSE"
     exit 1

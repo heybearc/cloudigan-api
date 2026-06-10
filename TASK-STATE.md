@@ -64,8 +64,11 @@ Product Profile (classifyProduct)
 HAProxy: `use_backend cloudigan_api_blue if is_cloudigan_api`
 
 ## Known Issues
-- **MCP health checks wrong port:** `homelab-blue-green-mcp` has no `port: 3000` for `cloudigan-api`, so MCP reports nodes DOWN and blocks automated traffic switch. Workaround: manual HAProxy sed + reload (documented in release workflow).
-- **MCP deploy_to_standby:** runs `npm run build` which does not exist for cloudigan-api; use `git pull && systemctl restart cloudigan-api` instead.
+- None blocking production.
+
+**Ops notes:**
+- **Runtime:** PM2 process `cloudigan-api` on both nodes (legacy `cloudigan-api.service` disabled).
+- **Deploy:** `mcp0_deploy_to_standby(app='cloudigan-api')` or `git pull && npm ci --omit=dev && pm2 restart cloudigan-api`.
 
 ## Exact Next Command
 Watch logs on next purchase:

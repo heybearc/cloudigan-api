@@ -30,10 +30,6 @@
 ## Prioritized Backlog
 
 ### High Priority
-- [ ] **MCP cloudigan-api port fix** — Set `port: 3000` in homelab-blue-green MCP config (effort: S)
-- [ ] **MCP deploy_to_standby skip build** — cloudigan-api has no `npm run build`; use systemd restart only (effort: S)
-
-### Medium Priority
 - [ ] **Stripe product ID overrides** — Populate `PRODUCT_ID_OVERRIDES` in `lib/product-profiles.js` for edge-case product names (effort: S)
 - [ ] **Admin Dashboard** — View webhook events, customer downloads, system health (effort: L)
 - [ ] **Rate Limiting** — Prevent webhook endpoint abuse (effort: S)
@@ -50,8 +46,6 @@
 
 | Issue | Impact | Workaround |
 |-------|--------|------------|
-| MCP health check uses port 3001 | Blocks automated `/release` via MCP | Manual HAProxy switch |
-| MCP deploy runs `npm run build` | Deploy fails on STANDBY | SSH: `git pull && systemctl restart cloudigan-api` |
 | Erroneous Datto site from pre-fix Chapter Hub test | Orphan site in Datto | Manual cleanup if needed |
 
 ---
@@ -75,7 +69,7 @@ Error handling, MCP integration, monitoring
 
 ### Phase 3: Multi-Product Operations — In Progress
 - ✅ Product profiles and profile-specific emails
-- [ ] MCP ops fixes for cloudigan-api
+- ✅ PM2 runtime + MCP deploy (port 3000, node-service)
 - [ ] Admin dashboard, rate limiting, automated tests
 
 ### Phase 4: Platform Expansion — Future

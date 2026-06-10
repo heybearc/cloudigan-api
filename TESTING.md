@@ -45,15 +45,15 @@ ssh root@10.92.3.182 'curl http://localhost:3000/health'
 # Expected: {"status":"ok"}
 ```
 
-**2. Service Status**
+**2. PM2 Status**
 ```bash
-ssh root@10.92.3.182 'systemctl status cloudigan-api'
-# Expected: active (running)
+ssh root@10.92.3.182 'pm2 status cloudigan-api'
+# Expected: online
 ```
 
 **3. Log Check**
 ```bash
-ssh root@10.92.3.182 'journalctl -u cloudigan-api -n 50 --no-pager'
+ssh root@10.92.3.182 'pm2 logs cloudigan-api --lines 50 --nostream'
 # Expected: No errors, clean startup
 ```
 
@@ -247,13 +247,13 @@ echo "🧪 Running Cloudigan API Tests..."
 echo "✓ Health check..."
 curl -f http://localhost:3000/health || exit 1
 
-# 2. Service status
-echo "✓ Service status..."
-systemctl is-active cloudigan-api || exit 1
+# 2. PM2 status
+echo "✓ PM2 status..."
+pm2 describe cloudigan-api | grep -q "status.*online" || exit 1
 
 # 3. Log check (no errors in last 50 lines)
 echo "✓ Log check..."
-if journalctl -u cloudigan-api -n 50 | grep -i "error\|fatal\|exception"; then
+if pm2 logs cloudigan-api --lines 50 --nostream 2>&1 | grep -i "error\|fatal\|exception"; then
     echo "❌ Errors found in logs"
     exit 1
 fi
@@ -330,8 +330,8 @@ chmod +x /opt/cloudigan-api/tests/run-tests.sh
 
 **Check:**
 ```bash
-systemctl status cloudigan-api
-journalctl -u cloudigan-api -n 100
+pm2 status cloudigan-api
+pm2 logs cloudigan-api --lines 100 --nostream
 ```
 
 ### Webhook Test Fails
