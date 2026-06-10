@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.2] - 2026-06-10
+
+### Added
+- Product profile routing: `rmm`, `service`, `chapter-hub` with dedicated customer and admin emails
+- BNI Chapter Hub confirmation email with hub.cloudigan.net links
+- Support-hour customer confirmation email
+
+### Changed
+- Admin purchase notifications driven by product profile (accurate processing summary)
+- Customer emails no longer include cross-product disclaimers
+- Production runtime standardized on PM2; legacy systemd unit disabled on nodes
+
+### Fixed
+- Support-hour and Chapter Hub purchases no longer trigger Datto site creation or RMM welcome emails
+- Chapter Hub purchases no longer misclassified as RMM products
+
+---
+
 ## [1.2.0] - 2026-03-18
 
 ### Added
