@@ -1,89 +1,58 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-05-28
+**Last updated:** 2026-06-10
 
 ## Current Task
-**Product-profile email routing (RMM / service / BNI Chapter Hub)** - COMPLETE — monitoring
+**v1.3.2 production — monitor real purchases** - ACTIVE
 
 ### What I'm doing right now
-Profile-driven purchase emails are live on both nodes. Next real purchases should be watched to confirm correct routing (no Datto for service/Chapter Hub, correct customer templates).
+v1.3.2 is LIVE on GREEN with product-profile emails and PM2 runtime. Watch the next real BNI Chapter Hub or support-hour purchase to confirm routing and email content.
 
 ### Recent completions
-- ✅ Product profiles: `rmm`, `service`, `chapter-hub` with profile-driven admin + customer emails — May 28
-- ✅ Support-hour customer confirmation + fixed admin notifications (no false Datto/Wix actions) — May 28
-- ✅ BNI Chapter Hub profile — skips RMM provisioning, dedicated customer email — May 28
-- ✅ Removed cross-product disclaimers from customer emails (no "not RMM" language) — May 28
-- ✅ BNI Chapter Hub branding + `hub.cloudigan.net` links — May 28
-- ✅ Released to LIVE (BLUE) and synced GREEN — both on `5835a38` — May 28
+- ✅ **v1.3.2 shipped** — release + sync; both nodes on `8c1ba7f` — Jun 10
+- ✅ PM2 standardized; legacy systemd disabled on both nodes — Jun 10
+- ✅ MCP deploy config: `node-service`, port 3000, `webhook-handler.js` — Jun 10
+- ✅ Product profiles + BNI Chapter Hub emails (`hub.cloudigan.net`) — May 28
+- ✅ Removed cross-product disclaimers from customer emails — May 28
 
 ### Integration Flow (Working)
 ```
-Customer purchases on Stripe
-    ↓
-Stripe processes payment
-    ↓
-Webhook → api.cloudigan.net/webhook/stripe
-    ↓
-Product Profile (classifyProduct)
-    ↓
-┌──────────────────────┬─────────────────────────┬──────────────────────────────┐
-│ RMM (default)        │ service                 │ chapter-hub                  │
-│ Home Protect, etc.   │ Support hours           │ BNI Chapter Hub              │
-├──────────────────────┼─────────────────────────┼──────────────────────────────┤
-│ ✅ Datto site        │ ❌ Skip Datto           │ ❌ Skip Datto                │
-│ ✅ Welcome email     │ ✅ Service confirmation │ ✅ BNI Chapter Hub email     │
-│ ✅ Wix CMS           │ ❌ Skip Wix             │ ❌ Skip Wix                  │
-│ ✅ Admin notification│ ✅ Admin notification   │ ✅ Admin notification        │
-└──────────────────────┴─────────────────────────┴──────────────────────────────┘
+Stripe webhook → classifyProduct → rmm | service | chapter-hub → profile-specific actions + emails
 ```
 
 ## Next Steps
 
 ### Immediate
-1. **Verify next real BNI Chapter Hub purchase**
-   - Customer email: BNI Chapter Hub branding, button → `hub.cloudigan.net`
-   - Admin email: processing summary only (no Datto/Wix false positives)
-   - No Datto site created
+1. **Verify next real BNI Chapter Hub purchase** — BNI branding, `hub.cloudigan.net`, no Datto site
+2. **Verify support-hour purchase** — service confirmation + accurate admin summary
+3. **Restart homelab-blue-green MCP in Cursor** — local MCP still uses old config (port 3001, npm build); Cloudy-Work `9bf09eb` has the fix
 
-2. **Verify support-hour purchase still correct**
-   - Service confirmation to customer; admin shows service actions only
-
-3. **Fix MCP health check port for cloudigan-api** (ops)
-   - MCP defaults to port 3001; app runs on 3000
-   - Blocks `switch_traffic` / deploy health checks — manual HAProxy switch used for release
-
-### Optional cleanup
-- Review/clean up Datto site created by Chapter Hub test purchase before profile fix (if still present)
+### Optional
+- Clean up orphan Datto site from pre-fix Chapter Hub test purchase
 
 ## Deployment State
-| Role | Server | IP | Commit |
-|------|--------|-----|--------|
-| **LIVE** | BLUE (CT181) | 10.92.3.181 | `5835a38` |
-| **STANDBY** | GREEN (CT182) | 10.92.3.182 | `5835a38` |
+| Role | Server | IP | Commit | Version |
+|------|--------|-----|--------|---------|
+| **LIVE** | GREEN (CT182) | 10.92.3.182 | `8c1ba7f` | 1.3.2 |
+| **STANDBY** | BLUE (CT181) | 10.92.3.181 | `8c1ba7f` | 1.3.2 |
 
-HAProxy: `use_backend cloudigan_api_blue if is_cloudigan_api`
+HAProxy: `use_backend cloudigan_api_green if is_cloudigan_api`
 
 ## Known Issues
-- None blocking production.
-
-**Ops notes:**
-- **Runtime:** PM2 process `cloudigan-api` on both nodes (legacy `cloudigan-api.service` disabled).
-- **Deploy:** `mcp0_deploy_to_standby(app='cloudigan-api')` or `git pull && npm ci --omit=dev && pm2 restart cloudigan-api`.
+- **Cursor MCP stale:** Running MCP server may not have Cloudy-Work `9bf09eb` yet — `deploy_to_standby` / `switch_traffic` fail until MCP restarted or path updated. Manual deploy works: `git pull && npm ci --omit=dev && pm2 restart cloudigan-api`.
 
 ## Exact Next Command
-Watch logs on next purchase:
+Watch logs on LIVE for next purchase:
 ```bash
-ssh -i ~/.ssh/homelab_root root@10.92.3.181 'journalctl -u cloudigan-api -f | grep -E "profileId|chapter-hub|service|isRmmProduct"'
+ssh -i ~/.ssh/homelab_root root@10.92.3.182 'pm2 logs cloudigan-api --lines 0 | grep -E "profileId|chapter-hub|service"'
 ```
 
-Or send test Chapter Hub emails on LIVE:
+Or test emails on LIVE:
 ```bash
-ssh -i ~/.ssh/homelab_root root@10.92.3.181 'cd /opt/cloudigan-api && node scripts/test-chapter-hub-emails.js'
+ssh -i ~/.ssh/homelab_root root@10.92.3.182 'cd /opt/cloudigan-api && node scripts/test-chapter-hub-emails.js'
 ```
 
 ## Success Criteria
-- [x] Product profiles route RMM / service / chapter-hub correctly
-- [x] Customer emails product-specific (no cross-product disclaimers)
-- [x] BNI Chapter Hub uses `hub.cloudigan.net`
-- [x] Deployed and released to LIVE
+- [x] v1.3.2 LIVE on both nodes
+- [x] PM2 runtime, systemd disabled
 - [ ] Verified with next real Chapter Hub purchase
