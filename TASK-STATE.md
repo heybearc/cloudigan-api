@@ -1,12 +1,12 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-30
 
 ## Current Task
 **v1.3.2 production — monitor real purchases** - ACTIVE
 
 ### What I'm doing right now
-v1.3.2 is LIVE on GREEN with product-profile emails and PM2 runtime. Watch the next real BNI Chapter Hub or support-hour purchase to confirm routing and email content.
+v1.3.2 remains stable on both nodes (verified 2026-06-30). Still waiting on a real BNI Chapter Hub or support-hour purchase to confirm production email routing.
 
 ### Recent completions
 - ✅ **v1.3.2 shipped** — release + sync; both nodes on `8c1ba7f` — Jun 10
