@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.3] - 2026-07-04
+
+### Added
+- `invoice.payment_failed` webhook handler with product-profile routing
+- Cloudigan-branded payment-failed customer email (Stripe customer portal link)
+
+### Fixed
+- Non–Chapter Hub subscription payment failures no longer receive Chapter Hub billing emails from the shared Stripe account (handled in chapter-hub guard; cloudigan-api sends the correct template)
+
+---
+
 ## [1.3.2] - 2026-06-10
 
 ### Added
