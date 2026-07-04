@@ -500,6 +500,34 @@ async function sendServiceConfirmationEmail(data) {
 }
 
 /**
+ * Notify customer when a subscription invoice payment fails (Cloudigan products only).
+ */
+async function sendPaymentFailedEmail(data) {
+  const m365Mailer = getMailer();
+  if (!m365Mailer) {
+    throw new Error('M365 mailer not configured');
+  }
+
+  const { buildPaymentFailedEmail } = require('./lib/payment-failed-email');
+  const { subject, htmlContent, textContent } = buildPaymentFailedEmail(data);
+
+  try {
+    await m365Mailer.sendMail({
+      to: data.customerEmail,
+      subject,
+      html: htmlContent,
+      text: textContent,
+    });
+
+    console.log('Payment failed email sent to:', data.customerEmail);
+    return true;
+  } catch (error) {
+    console.error('Payment failed email failed:', error.message);
+    throw new Error(`Failed to send payment failed email: ${error.message}`);
+  }
+}
+
+/**
  * Send purchase notification to admin
  */
 async function sendPurchaseNotification(data) {
@@ -532,5 +560,6 @@ module.exports = {
   sendWelcomeEmail,
   sendChapterHubConfirmationEmail,
   sendServiceConfirmationEmail,
+  sendPaymentFailedEmail,
   sendPurchaseNotification,
 };

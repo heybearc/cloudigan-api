@@ -34,9 +34,16 @@ const {
   sendWelcomeEmail,
   sendChapterHubConfirmationEmail,
   sendServiceConfirmationEmail,
+  sendPaymentFailedEmail,
   sendPurchaseNotification,
 } = require('./m365-email');
-const { classifyProduct, isRmmProfile, buildAdminActionSummary } = require('./lib/product-profiles');
+const {
+  classifyProduct,
+  isRmmProfile,
+  buildAdminActionSummary,
+  isChapterHubStripeMetadata,
+  isBusinessProductName,
+} = require('./lib/product-profiles');
 const { startTokenMonitoring } = require('./lib/token-monitor');
 const path = require('path');
 
@@ -250,9 +257,7 @@ app.post('/webhook/stripe',
           const productNameLower = productName.toLowerCase();
           
           // Determine if this is a business product
-          const isBusinessProduct = productNameLower.includes('business') || 
-                                   productNameLower.includes('complete package') ||
-                                   productNameLower.includes('essentials');
+          const isBusinessProduct = isBusinessProductName(productName);
           
           const profileId = classifyProduct(productName, session.metadata?.product_id);
           const isRmmProduct = isRmmProfile(profileId);
@@ -525,6 +530,115 @@ app.post('/webhook/stripe',
           received: true, 
           error: error.message,
           correlationId: req.correlationId
+        });
+      }
+    } else if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object;
+
+      try {
+        await trackAsyncOperation('webhook_processing', async () => {
+          const subId =
+            typeof invoice.subscription === 'string'
+              ? invoice.subscription
+              : invoice.subscription?.id;
+
+          if (!subId) {
+            requestLogger.info('Payment failed invoice has no subscription — skipping email');
+            return res.json({ received: true, skipped: 'no_subscription' });
+          }
+
+          const subscription = await stripe.subscriptions.retrieve(subId, {
+            expand: ['items.data.price.product', 'customer'],
+          });
+
+          const metadata = subscription.metadata || {};
+          if (isChapterHubStripeMetadata(metadata)) {
+            requestLogger.info('Skipping payment failed email — Chapter Hub subscription', {
+              subscriptionId: subId,
+            });
+            return res.json({ received: true, skipped: 'chapter_hub_metadata' });
+          }
+
+          const product = subscription.items?.data?.[0]?.price?.product;
+          const productName =
+            typeof product === 'object' && product && !product.deleted
+              ? product.name
+              : '';
+          const productId =
+            typeof product === 'object' && product && !product.deleted ? product.id : null;
+          const profileId = classifyProduct(productName, productId);
+
+          if (profileId === 'chapter-hub') {
+            requestLogger.info('Skipping payment failed email — chapter-hub product profile', {
+              subscriptionId: subId,
+              productName,
+            });
+            return res.json({ received: true, skipped: 'chapter_hub_product' });
+          }
+
+          const customer =
+            typeof subscription.customer === 'object' && subscription.customer
+              ? subscription.customer
+              : await stripe.customers.retrieve(subscription.customer);
+
+          if (customer.deleted || !customer.email) {
+            requestLogger.warn('Payment failed — no customer email', { subscriptionId: subId });
+            return res.json({ received: true, skipped: 'no_customer_email' });
+          }
+
+          const companyName =
+            metadata.company_name ||
+            customer.metadata?.company_name ||
+            (isBusinessProductName(productName) ? customer.name || '' : '');
+
+          await sendPaymentFailedEmail({
+            profileId,
+            productName,
+            customerName: customer.name || customer.email,
+            customerEmail: customer.email,
+            companyName,
+            invoiceUrl: invoice.hosted_invoice_url || null,
+          });
+
+          const duration = (Date.now() - startTime) / 1000;
+          recordWebhook(event.type, 'success', duration);
+          requestLogger.info('Payment failed email sent', {
+            subscriptionId: subId,
+            profileId,
+            productName,
+            customerEmail: customer.email,
+          });
+
+          return res.json({
+            received: true,
+            profileId,
+            productName,
+            correlationId: req.correlationId,
+          });
+        });
+      } catch (error) {
+        const duration = (Date.now() - startTime) / 1000;
+        recordWebhook(event.type, 'error', duration);
+        recordError('webhook_processing', event.type);
+
+        logError(requestLogger, error, {
+          operation: 'webhookProcessing',
+          eventType: event.type,
+          invoiceId: invoice.id,
+        });
+
+        await alerter.alertCritical(error, {
+          correlationId: req.correlationId,
+          operation: 'webhook_processing',
+          eventType: event.type,
+          invoiceId: invoice.id,
+          hostname: os.hostname(),
+        });
+
+        res.status(200).json({
+          received: true,
+          error: error.message,
+          correlationId: req.correlationId,
         });
       }
     } else {
