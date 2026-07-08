@@ -1,58 +1,63 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-08
 
 ## Current Task
-**v1.3.2 production — monitor real purchases** - ACTIVE
+**v1.3.3 LIVE — validate payment-failed routing** - ACTIVE
 
 ### What I'm doing right now
-v1.3.2 remains stable on both nodes (verified 2026-06-30). Still waiting on a real BNI Chapter Hub or support-hour purchase to confirm production email routing.
+v1.3.3 is LIVE on BLUE (CT181) with payment-failed email routing by product profile. Waiting on Stripe webhook event enablement and first real `invoice.payment_failed` in production to confirm Cloudigan-branded emails (not Chapter Hub).
 
 ### Recent completions
-- ✅ **v1.3.2 shipped** — release + sync; both nodes on `8c1ba7f` — Jun 10
-- ✅ PM2 standardized; legacy systemd disabled on both nodes — Jun 10
-- ✅ MCP deploy config: `node-service`, port 3000, `webhook-handler.js` — Jun 10
-- ✅ Product profiles + BNI Chapter Hub emails (`hub.cloudigan.net`) — May 28
-- ✅ Removed cross-product disclaimers from customer emails — May 28
+- ✅ **v1.3.3 shipped** — payment-failed handler + product templates; release + sync — Jul 4
+- ✅ **Chapter Hub v0.29.2** — billing guard so non-Hub subs skip Hub emails — Jul 4
+- ✅ **Wendy Ellis root cause** — Complete Package failure was Chapter Hub fallback on shared Stripe account
+- ✅ **HAProxy switch to BLUE LIVE** — manual fix after MCP `switch_traffic` sed mismatch — Jul 4
 
 ### Integration Flow (Working)
 ```
-Stripe webhook → classifyProduct → rmm | service | chapter-hub → profile-specific actions + emails
+checkout.session.completed → classifyProduct → rmm | service | chapter-hub → profile emails
+invoice.payment_failed     → skip chapter-hub metadata → Cloudigan payment-failed email (rmm/service)
 ```
 
 ## Next Steps
 
 ### Immediate
-1. **Verify next real BNI Chapter Hub purchase** — BNI branding, `hub.cloudigan.net`, no Datto site
-2. **Verify support-hour purchase** — service confirmation + accurate admin summary
-3. **Restart homelab-blue-green MCP in Cursor** — local MCP still uses old config (port 3001, npm build); Cloudy-Work `9bf09eb` has the fix
+1. **Stripe Dashboard** — add `invoice.payment_failed` to `api.cloudigan.net` webhook (if not done)
+2. **Wendy billing** — set default PM on `cus_UE7HQ2lMMVcd2k`, retry or cancel `sub_1TFf2yInNVY2iy2yiErm40ex`
+3. **Confirm next payment failure** — Cloudigan email (not “your chapter”) on LIVE
 
 ### Optional
+- **Fix MCP `switch_traffic`** for cloudigan-api — HAProxy uses `cloudigan_api_blue` (underscore); MCP sed expects hyphen separator
+- Verify next real BNI Chapter Hub / support-hour **checkout** emails still correct
 - Clean up orphan Datto site from pre-fix Chapter Hub test purchase
 
 ## Deployment State
 | Role | Server | IP | Commit | Version |
 |------|--------|-----|--------|---------|
-| **LIVE** | GREEN (CT182) | 10.92.3.182 | `8c1ba7f` | 1.3.2 |
-| **STANDBY** | BLUE (CT181) | 10.92.3.181 | `8c1ba7f` | 1.3.2 |
+| **LIVE** | BLUE (CT181) | 10.92.3.181 | `ead8a96` | 1.3.3 |
+| **STANDBY** | GREEN (CT182) | 10.92.3.182 | `ead8a96` | 1.3.3 |
 
-HAProxy: `use_backend cloudigan_api_green if is_cloudigan_api`
+HAProxy: `use_backend cloudigan_api_blue if is_cloudigan_api`
 
 ## Known Issues
-- **Cursor MCP stale:** Running MCP server may not have Cloudy-Work `9bf09eb` yet — `deploy_to_standby` / `switch_traffic` fail until MCP restarted or path updated. Manual deploy works: `git pull && npm ci --omit=dev && pm2 restart cloudigan-api`.
+- **MCP switch_traffic (cloudigan-api):** `getHaProxyBackendSeparator` returns `-` but HAProxy backends are `cloudigan_api_blue/green` (underscore). Jul 4 release required manual HAProxy sed on CT136.
+- **Stripe webhook event:** `invoice.payment_failed` must be enabled on production webhook endpoint for payment-failed emails to fire.
 
 ## Exact Next Command
-Watch logs on LIVE for next purchase:
+Verify LIVE version and watch for payment-failed events:
 ```bash
-ssh -i ~/.ssh/homelab_root root@10.92.3.182 'pm2 logs cloudigan-api --lines 0 | grep -E "profileId|chapter-hub|service"'
+curl -sf https://api.cloudigan.net/health | jq '{version,hostname}'
+ssh -i ~/.ssh/homelab_root root@10.92.3.181 'pm2 logs cloudigan-api --lines 0 | grep -E "payment_failed|Payment failed"'
 ```
 
-Or test emails on LIVE:
+Preview payment-failed template:
 ```bash
-ssh -i ~/.ssh/homelab_root root@10.92.3.182 'cd /opt/cloudigan-api && node scripts/test-chapter-hub-emails.js'
+ssh -i ~/.ssh/homelab_root root@10.92.3.181 'cd /opt/cloudigan-api && node scripts/test-payment-failed-email.js --send'
 ```
 
 ## Success Criteria
-- [x] v1.3.2 LIVE on both nodes
-- [x] PM2 runtime, systemd disabled
-- [ ] Verified with next real Chapter Hub purchase
+- [x] v1.3.3 LIVE on both nodes
+- [x] Payment-failed routing implemented (cloudigan-api + chapter-hub guard)
+- [ ] Stripe webhook includes `invoice.payment_failed`
+- [ ] Verified production payment-failed email (non–Chapter Hub product)
