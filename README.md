@@ -4,6 +4,8 @@
 
 Automatically creates Datto RMM sites and sends customer notifications when Stripe subscriptions are created through Stripe.
 
+RMM subscriptions still create a Datto site and send the agent download email. Hosting, professional services, and Chapter Hub purchases are matched from the product catalog and send their own confirmation emails without creating an RMM site.
+
 ## Workflow
 
 1. Customer completes checkout on Stripe pricing table

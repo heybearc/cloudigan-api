@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.4] - 2026-11-17
+
+### Added
+- Stripe product catalog (`lib/product-catalog.js`) so purchases resolve by product ID, with keyword fallback
+- `hosting` product profile and a hosting purchase confirmation email
+
+### Fixed
+- Windows Server Hosting and other catalog products no longer create Datto RMM sites or send RMM welcome emails
+
+---
+
 ## [1.3.3] - 2026-07-04
 
 ### Added
