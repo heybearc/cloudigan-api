@@ -1,31 +1,31 @@
 # Cloudigan API Plan
 
-**Last updated:** 2026-07-08  
+**Last updated:** 2026-11-17  
 **Current phase:** Phase 3 — Multi-Product Operations  
-**Status:** v1.3.3 LIVE on BLUE — payment-failed routing shipped
+**Status:** Catalog/hosting fix on STANDBY — awaiting `/ship` to LIVE
 
 ---
 
 ## Current Phase
 
 ### Active Work
-- [ ] **Enable Stripe `invoice.payment_failed`** on production webhook endpoint
-- [ ] **Validate payment-failed emails** on first real non–Chapter Hub failure
-- [ ] **Monitor checkout emails** — Chapter Hub and support-hour purchases on LIVE
+- [ ] **`/ship cloudigan-api`** — release product catalog + hosting profile to LIVE
+- [ ] **Delete Datto orphan** in UI (`ZZZ-DELETE — Hosting miscreate (Renvis)`)
+- [ ] **Validate** next hosting/service checkout + payment-failed emails on LIVE
 
 ### Recently Completed
-- ✅ **v1.3.3 release** — `invoice.payment_failed` handler, Cloudigan-branded payment-failed email — 2026-07-04
-- ✅ **Chapter Hub v0.29.2** (sibling repo) — Hub billing emails only for Hub-managed subscriptions — 2026-07-04
-- ✅ **v1.3.2 release** — product profiles, BNI Chapter Hub emails, PM2 ops — 2026-06-10
-- ✅ PM2 standardized; systemd disabled on CT181/182 — 2026-06-10
+- ✅ **Product catalog** (`lib/product-catalog.js`) + `hosting` profile; confirmation emails use Stripe product name/description/nextSteps — 2026-11-16
+- ✅ **Stripe** `invoice.payment_failed` enabled on api.cloudigan.net webhook — 2026-11-16
+- ✅ **MCP** cloudigan-api `deployType: node-service` + underscore HAProxy separator — Cloudy-Work `706ce7b` — 2026-11-16
+- ✅ **v1.3.3** payment-failed handler — 2026-07-04
+- ✅ **Chapter Hub v0.29.2** billing guard — 2026-07-04
 
 ---
 
 ## Prioritized Backlog
 
 ### High Priority
-- [ ] **Fix MCP HAProxy separator for cloudigan-api** — underscore backends (`cloudigan_api_blue`) vs MCP sed hyphen (effort: S)
-- [ ] **Stripe product ID overrides** — `PRODUCT_ID_OVERRIDES` for edge-case product names (effort: S)
+- [ ] Keep `lib/product-catalog.js` in sync when new Stripe products are added
 
 ### Medium Priority
 - [ ] **Admin Dashboard** — Webhook events, health (effort: L)
@@ -42,38 +42,20 @@
 
 | Issue | Impact | Workaround |
 |-------|--------|------------|
-| MCP `switch_traffic` cloudigan-api | Release switch fails verify step | Manual HAProxy sed on CT136 (`cloudigan_api_blue`) |
-| Stripe webhook missing event | Payment-failed emails never fire | Add `invoice.payment_failed` in Stripe Dashboard |
-| Orphan Datto site (pre-fix Chapter Hub test) | Clutter in Datto | Manual cleanup if needed |
+| LIVE without catalog fix | Hosting still RMM on LIVE | `/ship` |
+| Datto API cannot delete sites | Orphan remains until UI delete | Renamed ZZZ-DELETE |
 
 ---
 
 ## User Feedback
 
-**2026-07-04 (fixed in v1.3.3 + chapter-hub v0.29.2):**
-- Complete Package payment failure sent Chapter Hub “your chapter” email — **fixed** (Hub guard + cloudigan-api handler)
-
-**2026-05-28 (fixed in v1.3.2):**
-- Support-hour admin emails showed RMM fields — **fixed**
-- Customer emails listed unrelated products — **fixed**
-- Chapter Hub misclassified as RMM — **fixed**
-- BNI Chapter Hub branding + hub.cloudigan.net — **fixed**
+**2026-11-16:** Windows Server Hosting sent RMM subscription email — **fixed on STANDBY**, ship pending  
+**2026-07-04:** Complete Package payment failure → Chapter Hub email — **fixed** (v1.3.3 + Hub guard)
 
 ---
 
 ## Infrastructure
 
-- **LIVE:** BLUE CT181 @ 10.92.3.181 — PM2 `cloudigan-api`, port 3000, v1.3.3
-- **STANDBY:** GREEN CT182 @ 10.92.3.182 — v1.3.3
-- **Deploy:** MCP `deploy_to_standby` or `git pull && npm ci --omit=dev && pm2 restart cloudigan-api`
+- **LIVE:** BLUE CT181 — v1.3.3 (pre-catalog)
+- **STANDBY:** GREEN CT182 — `0fa50f7` (catalog)
 - **Public:** https://api.cloudigan.net
-
----
-
-## Roadmap
-
-### Phase 3 — In Progress
-- ✅ Product profiles and checkout emails
-- ✅ Payment-failed emails by product profile (v1.3.3)
-- [ ] Production validation on real payment failures and purchases
-- [ ] Admin dashboard, rate limiting, tests

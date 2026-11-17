@@ -1,63 +1,58 @@
 # Stripe-Datto Integration - Task State
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-11-17
 
 ## Current Task
-**v1.3.3 LIVE — validate payment-failed routing** - ACTIVE
+**Ship catalog/hosting email routing to LIVE** - READY
 
 ### What I'm doing right now
-v1.3.3 is LIVE on BLUE (CT181) with payment-failed email routing by product profile. Waiting on Stripe webhook event enablement and first real `invoice.payment_failed` in production to confirm Cloudigan-branded emails (not Chapter Hub).
+Product-catalog routing (`hosting` profile + Stripe product IDs) is on **STANDBY** (`0fa50f7`). LIVE is still BLUE without that fix. MCP deploy/switch bugs fixed in Cloudy-Work `706ce7b`. Next: `/ship cloudigan-api` then `/sync`.
 
 ### Recent completions
-- ✅ **v1.3.3 shipped** — payment-failed handler + product templates; release + sync — Jul 4
-- ✅ **Chapter Hub v0.29.2** — billing guard so non-Hub subs skip Hub emails — Jul 4
-- ✅ **Wendy Ellis root cause** — Complete Package failure was Chapter Hub fallback on shared Stripe account
-- ✅ **HAProxy switch to BLUE LIVE** — manual fix after MCP `switch_traffic` sed mismatch — Jul 4
+- ✅ **Product catalog + hosting profile** — `Windows Server Hosting - Internal` no longer RMM/Datto/welcome — STANDBY `0fa50f7` — Nov 16
+- ✅ **Stripe webhook** — enabled `invoice.payment_failed` on `api.cloudigan.net` endpoint — Nov 16
+- ✅ **MCP deployType restored** — Cloudy-Work `706ce7b`; STANDBY deploy via `npm ci` verified — Nov 16
+- ✅ **MCP HAProxy underscore** for `cloudigan_api_*` backends — Cloudy-Work `706ce7b`
+- ✅ **Datto orphan flagged** — site `84d6bf5d…` renamed `ZZZ-DELETE — Hosting miscreate (Renvis)` (0 devices; API cannot DELETE) — Nov 16
+- ✅ **v1.3.3** payment-failed routing shipped — Jul 4
 
-### Integration Flow (Working)
+### Integration Flow (Working on STANDBY)
 ```
-checkout.session.completed → classifyProduct → rmm | service | chapter-hub → profile emails
-invoice.payment_failed     → skip chapter-hub metadata → Cloudigan payment-failed email (rmm/service)
+checkout.session.completed → resolveProduct(catalog ID) → rmm | service | hosting | chapter-hub
+invoice.payment_failed     → skip chapter-hub → Cloudigan payment-failed email
 ```
 
 ## Next Steps
 
 ### Immediate
-1. **Stripe Dashboard** — add `invoice.payment_failed` to `api.cloudigan.net` webhook (if not done)
-2. **Wendy billing** — set default PM on `cus_UE7HQ2lMMVcd2k`, retry or cancel `sub_1TFf2yInNVY2iy2yiErm40ex`
-3. **Confirm next payment failure** — Cloudigan email (not “your chapter”) on LIVE
+1. **`/ship cloudigan-api`** — bump (likely 1.3.4), release notes, switch LIVE to GREEN with catalog fix, then `/sync`
+2. **Datto UI** — delete site named `ZZZ-DELETE — Hosting miscreate (Renvis)` (UID `84d6bf5d-3f0d-43f5-9ae7-583be31913cf`)
 
 ### Optional
-- **Fix MCP `switch_traffic`** for cloudigan-api — HAProxy uses `cloudigan_api_blue` (underscore); MCP sed expects hyphen separator
-- Verify next real BNI Chapter Hub / support-hour **checkout** emails still correct
-- Clean up orphan Datto site from pre-fix Chapter Hub test purchase
+- Confirm next hosting/service purchase gets catalog confirmation (not RMM welcome)
+- Confirm next payment failure email is Cloudigan-branded
 
 ## Deployment State
 | Role | Server | IP | Commit | Version |
 |------|--------|-----|--------|---------|
-| **LIVE** | BLUE (CT181) | 10.92.3.181 | `ead8a96` | 1.3.3 |
-| **STANDBY** | GREEN (CT182) | 10.92.3.182 | `ead8a96` | 1.3.3 |
+| **LIVE** | BLUE (CT181) | 10.92.3.181 | pre-catalog (v1.3.3) | 1.3.3 |
+| **STANDBY** | GREEN (CT182) | 10.92.3.182 | `0fa50f7` | 1.3.3 + catalog |
 
 HAProxy: `use_backend cloudigan_api_blue if is_cloudigan_api`
 
 ## Known Issues
-- **MCP switch_traffic (cloudigan-api):** `getHaProxyBackendSeparator` returns `-` but HAProxy backends are `cloudigan_api_blue/green` (underscore). Jul 4 release required manual HAProxy sed on CT136.
-- **Stripe webhook event:** `invoice.payment_failed` must be enabled on production webhook endpoint for payment-failed emails to fire.
+- **LIVE lagging STANDBY** — catalog/hosting fix not released yet
+- **Datto site delete** — API has no DELETE site; finish purge in Datto UI
 
 ## Exact Next Command
-Verify LIVE version and watch for payment-failed events:
-```bash
-curl -sf https://api.cloudigan.net/health | jq '{version,hostname}'
-ssh -i ~/.ssh/homelab_root root@10.92.3.181 'pm2 logs cloudigan-api --lines 0 | grep -E "payment_failed|Payment failed"'
 ```
-
-Preview payment-failed template:
-```bash
-ssh -i ~/.ssh/homelab_root root@10.92.3.181 'cd /opt/cloudigan-api && node scripts/test-payment-failed-email.js --send'
+/ship cloudigan-api
 ```
+Then after LIVE healthy: `/sync`
 
 ## Success Criteria
-- [x] v1.3.3 LIVE on both nodes
-- [x] Payment-failed routing implemented (cloudigan-api + chapter-hub guard)
-- [ ] Stripe webhook includes `invoice.payment_failed`
-- [ ] Verified production payment-failed email (non–Chapter Hub product)
+- [x] Catalog routing on STANDBY
+- [x] Stripe `invoice.payment_failed` enabled
+- [x] MCP node-service deploy verified
+- [ ] Catalog fix LIVE (ship)
+- [ ] Datto ZZZ-DELETE site removed in UI
