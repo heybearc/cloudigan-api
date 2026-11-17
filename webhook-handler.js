@@ -38,7 +38,7 @@ const {
   sendPurchaseNotification,
 } = require('./m365-email');
 const {
-  classifyProduct,
+  resolveProduct,
   isRmmProfile,
   buildAdminActionSummary,
   isChapterHubStripeMetadata,
@@ -250,32 +250,55 @@ app.post('/webhook/stripe',
             expand: ['line_items', 'line_items.data.price.product']
           });
           
-          const productName = fullSession.line_items?.data?.[0]?.price?.product?.name || '';
-          
+          const lineProduct = fullSession.line_items?.data?.[0]?.price?.product;
+          const stripeProductId =
+            (typeof lineProduct === 'object' && lineProduct && !lineProduct.deleted
+              ? lineProduct.id
+              : null) ||
+            session.metadata?.product_id ||
+            null;
+          const stripeProductName =
+            (typeof lineProduct === 'object' && lineProduct && !lineProduct.deleted
+              ? lineProduct.name
+              : '') || '';
+          const stripeProductDescription =
+            typeof lineProduct === 'object' && lineProduct && !lineProduct.deleted
+              ? lineProduct.description || ''
+              : '';
+
           // Extract device quantity from expanded line items (quantity on the raw session is not populated)
           const deviceQuantity = fullSession.line_items?.data?.[0]?.quantity || session.metadata?.quantity || 1;
-          const productNameLower = productName.toLowerCase();
-          
+
+          const resolved = resolveProduct(
+            stripeProductName,
+            stripeProductId,
+            stripeProductDescription,
+          );
+          const productName = resolved.productName;
+          const productDescription = resolved.productDescription;
+          const profileId = resolved.profileId;
+
           // Determine if this is a business product
           const isBusinessProduct = isBusinessProductName(productName);
-          
-          const profileId = classifyProduct(productName, session.metadata?.product_id);
+
           const isRmmProduct = isRmmProfile(profileId);
           const isStandaloneService = !isRmmProduct;
-          
+
           // Log extracted data for debugging
-          requestLogger.info('Extracted customer data', { 
+          requestLogger.info('Extracted customer data', {
             companyName,
             businessLocation,
             customerName,
             productName,
+            productId: stripeProductId,
+            productDescription: productDescription ? productDescription.slice(0, 120) : '',
             isBusinessProduct,
             profileId,
             isRmmProduct,
             isStandaloneService,
-            deviceQuantity
+            deviceQuantity,
           });
-          
+
           const processingResults = {
             dattoSiteCreated: false,
             downloadLinksGenerated: false,
@@ -294,13 +317,15 @@ app.post('/webhook/stripe',
             displayName: companyName || customerName, // Use company name if available, otherwise customer name
             subscriptionId: session.subscription,
             customerId: session.customer,
-            productId: session.metadata?.product_id,
-            productName: productName,
+            productId: stripeProductId,
+            productName,
+            productDescription,
+            nextSteps: resolved.nextSteps,
             isBusinessProduct: isBusinessProduct, // Determined from actual Stripe product
             profileId,
             isRmmProduct: isRmmProduct, // Whether this product requires Datto RMM site
             isStandaloneService: isStandaloneService, // Whether this is a standalone service (no RMM)
-            deviceQuantity: deviceQuantity
+            deviceQuantity: deviceQuantity,
           };
 
           requestLogger.info('Processing subscription', {
@@ -419,18 +444,24 @@ app.post('/webhook/stripe',
                   email: customerData.email,
                 });
               } else {
+                // service + hosting (+ future non-RMM profiles): catalog-driven confirmation
                 await sendServiceConfirmationEmail({
+                  profileId: customerData.profileId,
                   customerEmail: customerData.email,
                   customerName: customerData.customerName,
                   companyName: customerData.companyName,
                   productName: customerData.productName,
+                  productDescription: customerData.productDescription,
+                  nextSteps: customerData.nextSteps,
                   deviceQuantity: customerData.deviceQuantity,
                   amountTotal: session.amount_total,
                   currency: session.currency,
                 });
                 processingResults.serviceConfirmationSent = true;
-                requestLogger.info('Service confirmation email sent', {
+                requestLogger.info('Product confirmation email sent', {
+                  profileId: customerData.profileId,
                   productName: customerData.productName,
+                  productId: customerData.productId,
                   email: customerData.email,
                 });
               }
@@ -560,13 +591,19 @@ app.post('/webhook/stripe',
           }
 
           const product = subscription.items?.data?.[0]?.price?.product;
-          const productName =
+          const rawProductName =
             typeof product === 'object' && product && !product.deleted
               ? product.name
               : '';
           const productId =
             typeof product === 'object' && product && !product.deleted ? product.id : null;
-          const profileId = classifyProduct(productName, productId);
+          const rawDescription =
+            typeof product === 'object' && product && !product.deleted
+              ? product.description || ''
+              : '';
+          const resolved = resolveProduct(rawProductName, productId, rawDescription);
+          const profileId = resolved.profileId;
+          const productName = resolved.productName;
 
           if (profileId === 'chapter-hub') {
             requestLogger.info('Skipping payment failed email — chapter-hub product profile', {
@@ -594,6 +631,7 @@ app.post('/webhook/stripe',
           await sendPaymentFailedEmail({
             profileId,
             productName,
+            productDescription: resolved.productDescription,
             customerName: customer.name || customer.email,
             customerEmail: customer.email,
             companyName,
