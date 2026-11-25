@@ -9,7 +9,7 @@ require('dotenv').config();
 const https = require('https');
 const fs = require('fs').promises;
 const path = require('path');
-const nodemailer = require('nodemailer');
+const M365OAuthMailer = require('./m365-oauth-mailer');
 const { updateTokenRefreshStatus } = require('./lib/metrics');
 
 const TOKEN_FILE = path.join(__dirname, '.datto-token.json');
@@ -77,18 +77,12 @@ function requestToken() {
  */
 async function sendAlert(subject, message) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.M365_SMTP_HOST,
-      port: parseInt(process.env.M365_SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.M365_SMTP_USER,
-        pass: process.env.M365_SMTP_PASS,
-      },
+    const mailer = new M365OAuthMailer({
+      fromEmail: 'notifications@cloudigan.com',
+      fromName: 'Cloudigan API Monitor',
     });
 
-    await transporter.sendMail({
-      from: process.env.M365_SMTP_USER,
+    await mailer.sendMail({
       to: process.env.ALERT_EMAIL || 'cory@cloudigan.com',
       subject: subject,
       text: message,

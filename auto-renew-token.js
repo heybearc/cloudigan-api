@@ -15,10 +15,7 @@ const TOKEN_FILE = path.join(__dirname, '.datto-token.json');
 
 // Initialize M365 mailer
 const mailer = new M365OAuthMailer({
-  clientId: process.env.M365_CLIENT_ID,
-  tenantId: process.env.M365_TENANT_ID,
-  clientSecret: process.env.M365_CLIENT_SECRET,
-  fromEmail: process.env.M365_FROM_EMAIL || 'noreply@cloudigan.com',
+  fromEmail: 'notifications@cloudigan.com',
   fromName: 'Cloudigan API Monitor'
 });
 

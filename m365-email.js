@@ -7,17 +7,15 @@ const M365OAuthMailer = require('./m365-oauth-mailer');
 const { SUPPORT_EMAIL, NO_REPLY_NOTE } = require('./lib/email-constants');
 
 const M365_CONFIG = {
-  clientId: process.env.M365_CLIENT_ID,
-  tenantId: process.env.M365_TENANT_ID,
-  clientSecret: process.env.M365_CLIENT_SECRET,
   fromEmail: process.env.M365_FROM_EMAIL || 'noreply@cloudigan.com',
-  fromName: 'Cloudigan Support'
+  fromName: 'Cloudigan Support',
+  replyTo: 'support@cloudigan.com'
 };
 
 let mailer = null;
 
 function getMailer() {
-  if (!mailer && M365_CONFIG.clientId) {
+  if (!mailer && process.env.MAIL_GATEWAY_API_KEY) {
     mailer = new M365OAuthMailer(M365_CONFIG);
   }
   return mailer;
